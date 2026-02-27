@@ -1,15 +1,6 @@
 ---
 name: low-complexity
-description: >
-  Enforce low Cognitive Complexity (SonarSource) and low Cyclomatic Complexity in ALL code written
-  or modified, in any programming language, framework, or platform. This skill MUST activate
-  automatically whenever code is being written, generated, modified, or refactored — no explicit
-  trigger needed. Triggers include: writing any function, method, class, module, script, handler,
-  endpoint, test, or code block. Also triggers on: "low complexity", "cognitive complexity",
-  "cyclomatic complexity", "CogC", "CC", "reduce complexity", "simplify code", "too complex",
-  "refactor for readability", "clean code", "baja complejidad", "complejidad cognitiva",
-  "complejidad ciclomatica", "implement", "fix bug", "add feature", "generate test",
-  "optimize", "rewrite", "scaffold".
+description: Enforce low Cognitive Complexity (SonarSource) and low Cyclomatic Complexity in ALL code written or modified, in any programming language, framework, or platform. This skill MUST activate automatically whenever code is being written, generated, modified, or refactored — no explicit trigger needed. Triggers include writing any function, method, class, module, script, handler, endpoint, test, or code block. Also triggers on "low complexity", "cognitive complexity", "cyclomatic complexity", "reduce complexity", "simplify code", "too complex", "refactor for readability", "clean code", "implement", "fix bug", "add feature", "generate test", "optimize", "rewrite", "scaffold".
 ---
 
 # Low Complexity Code
