@@ -23,3 +23,4 @@ npx skills add mryll/skills --skill vertical-slice-architecture
 | **agentmd** | Generate minimal, research-backed CLAUDE.md / AGENTS.md context files. Based on ETH Zurich research. |
 | **low-complexity** | Enforce low Cognitive and Cyclomatic Complexity in all generated code. |
 | **vertical-slice-architecture** | Enforce Vertical Slice Architecture (VSA) — organize code by feature, not by layer. |
+
