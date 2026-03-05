@@ -18,7 +18,8 @@
         "./skills/agentmd",
         "./skills/low-complexity",
         "./skills/vertical-slice-architecture",
-        "./skills/codex-review"
+        "./skills/codex-review",
+        "./skills/test-namer"
       ]
     }
   ]
