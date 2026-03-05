@@ -4,20 +4,21 @@
     "name": "mryll"
   },
   "metadata": {
-    "description": "Research-backed agent skills: context file generation, complexity enforcement, and vertical slice architecture",
+    "description": "Research-backed agent skills: context file generation, complexity enforcement, vertical slice architecture, and iterative code review with Codex CLI",
     "version": "1.0.0"
   },
   "plugins": [
     {
       "name": "mryll-skills",
       "source": "./",
-      "description": "AgentMD, Low Complexity, and Vertical Slice Architecture skills",
+      "description": "AgentMD, Low Complexity, Vertical Slice Architecture, and Codex Review skills",
       "version": "1.0.0",
       "strict": false,
       "skills": [
         "./skills/agentmd",
         "./skills/low-complexity",
-        "./skills/vertical-slice-architecture"
+        "./skills/vertical-slice-architecture",
+        "./skills/codex-review"
       ]
     }
   ]
