@@ -1,7 +1,7 @@
 ---
 name: codex-review
 version: 1.0.0
-description: "Iterative code review and planning discussion between Claude Code and Codex CLI (gpt-5.3-codex, configurable reasoning effort). Orchestrates an automatic back-and-forth debate where both agents discuss findings, architecture decisions, or implementation plans until reaching consensus. Codex CLI operates in READ-ONLY mode — it never modifies files. Supports plan mode: when Claude Code has a plan ready, invoke this skill to have Codex evaluate and iterate on the plan before implementation, producing an updated consensus plan. Use when the user asks to \"review with codex\", \"analyze with codex\", \"discuss with codex\", \"iterate with codex\", \"consult codex\", \"ask codex\", \"review the plan with codex\", \"validate plan with codex\", or any request involving Codex CLI for code review, architecture review, planning discussion, or collaborative analysis of code, design, or implementation strategy."
+description: "Iterative code review and planning discussion between Claude Code and Codex CLI (defaults to gpt-5.4 with xhigh reasoning effort, both configurable). Orchestrates an automatic back-and-forth debate where both agents discuss findings, architecture decisions, or implementation plans until reaching consensus. Codex CLI operates in READ-ONLY mode — it never modifies files. Supports plan mode: when Claude Code has a plan ready, invoke this skill to have Codex evaluate and iterate on the plan before implementation, producing an updated consensus plan. Use when the user asks to \"review with codex\", \"analyze with codex\", \"discuss with codex\", \"iterate with codex\", \"consult codex\", \"ask codex\", \"review the plan with codex\", \"validate plan with codex\", or any request involving Codex CLI for code review, architecture review, planning discussion, or collaborative analysis of code, design, or implementation strategy."
 ---
 
 # Codex Review — Iterative Consensus Skill
@@ -23,26 +23,29 @@ Give Codex only a brief project description (what it does, tech stack) for conte
 
 ## Codex CLI Configuration
 
-- **Model**: `gpt-5.3-codex` (default in user config, no `-m` flag needed)
+- **Model**: `gpt-5.4` (always pass `-m gpt-5.4` unless the user specifies a different model)
 - **Command**: `codex exec "prompt"` — always use this form
 - **CRITICAL**: Codex CLI must NEVER modify files. Always include the read-only constraint in every prompt sent to Codex.
 
-### Reasoning Effort
+### Model and Reasoning Effort
 
-Default: `xhigh`. The user can override this in their trigger message (e.g., "review with codex using high reasoning", "analyze with codex effort medium").
-
-Detect reasoning effort keywords in the user's request: `xhigh`, `high`, `medium`, `low`. If specified, pass it to Codex CLI with the `--reasoning-effort` flag:
+Defaults: model `gpt-5.4`, reasoning effort `xhigh`. Always pass both flags explicitly. The user can override either or both in their trigger message (e.g., "review with codex using gpt-5.3-codex", "analyze with codex effort medium").
 
 ```bash
-# Default (xhigh) — no flag needed, it's the config default
-codex exec "prompt"
+# Defaults
+codex exec -m gpt-5.4 --reasoning-effort xhigh "prompt"
 
-# User-specified effort
-codex exec --reasoning-effort high "prompt"
-codex exec --reasoning-effort medium "prompt"
+# User overrides model
+codex exec -m gpt-5.3-codex --reasoning-effort xhigh "prompt"
+
+# User overrides reasoning effort
+codex exec -m gpt-5.4 --reasoning-effort medium "prompt"
+
+# User overrides both
+codex exec -m gpt-5.3-codex --reasoning-effort medium "prompt"
 ```
 
-Use the same reasoning effort for ALL rounds within a session. Do not change it mid-discussion.
+Use the same model and reasoning effort for ALL rounds within a session. Do not change them mid-discussion.
 
 ## Token Efficiency — Let Codex Navigate
 
