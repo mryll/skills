@@ -24,28 +24,34 @@ Give Codex only a brief project description (what it does, tech stack) for conte
 ## Codex CLI Configuration
 
 - **Model**: `gpt-5.4` (always pass `-m gpt-5.4` unless the user specifies a different model)
-- **Command**: `codex exec "prompt"` — always use this form
-- **CRITICAL**: Codex CLI must NEVER modify files. Always include the read-only constraint in every prompt sent to Codex.
+- **Command**: `codex exec -m gpt-5.4 -c model_reasoning_effort="xhigh" -s read-only --skip-git-repo-check "prompt"` — always use this form with all flags
+- **CRITICAL**: Codex CLI must NEVER modify files. Always pass `-s read-only` and include the read-only constraint in every prompt sent to Codex.
 
 ### Model and Reasoning Effort
 
-Defaults: model `gpt-5.4`, reasoning effort `xhigh`. Always pass both flags explicitly. The user can override either or both in their trigger message (e.g., "review with codex using gpt-5.3-codex", "analyze with codex effort medium").
+Defaults: model `gpt-5.4`, reasoning effort `xhigh`. Always pass both explicitly. The user can override either or both in their trigger message (e.g., "review with codex using gpt-5.3-codex", "analyze with codex effort medium").
+
+**IMPORTANT CLI syntax**: Reasoning effort is NOT a CLI flag — it must be passed via the `-c` config override: `-c model_reasoning_effort="xhigh"`. The `--reasoning-effort` flag does not exist and will cause an error.
 
 ```bash
 # Defaults
-codex exec -m gpt-5.4 --reasoning-effort xhigh "prompt"
+codex exec -m gpt-5.4 -c model_reasoning_effort="xhigh" -s read-only --skip-git-repo-check "prompt"
 
 # User overrides model
-codex exec -m gpt-5.3-codex --reasoning-effort xhigh "prompt"
+codex exec -m gpt-5.3-codex -c model_reasoning_effort="xhigh" -s read-only --skip-git-repo-check "prompt"
 
 # User overrides reasoning effort
-codex exec -m gpt-5.4 --reasoning-effort medium "prompt"
+codex exec -m gpt-5.4 -c model_reasoning_effort="medium" -s read-only --skip-git-repo-check "prompt"
 
 # User overrides both
-codex exec -m gpt-5.3-codex --reasoning-effort medium "prompt"
+codex exec -m gpt-5.3-codex -c model_reasoning_effort="medium" -s read-only --skip-git-repo-check "prompt"
 ```
 
 Use the same model and reasoning effort for ALL rounds within a session. Do not change them mid-discussion.
+
+### Trust and Git Repo Check
+
+**Always pass `--skip-git-repo-check`** in every `codex exec` call. Without it, Codex CLI will refuse to run if the working directory is not inside a trusted git repository — this causes failures when Claude Code invokes the skill from projects not yet marked as trusted in Codex's config. Since we always run in read-only mode, skipping this check is safe.
 
 ## Token Efficiency — Let Codex Navigate
 
@@ -163,7 +169,7 @@ Compare Codex's findings against your internal pre-analysis:
 
 **For each subsequent round:**
 
-1. **Send follow-up to Codex** via `codex exec "prompt"` (use heredoc for multi-line prompts)
+1. **Send follow-up to Codex** via `codex exec -m <model> -c model_reasoning_effort="<effort>" -s read-only --skip-git-repo-check "prompt"` (use heredoc for multi-line prompts)
 2. **Analyze Codex's response**: Identify findings, agreements, disagreements, or questions
 3. **Formulate Claude Code's response**:
    - If Codex asks for more context: provide it (read the files/paths Codex requests, summarize relevant info, or point to additional paths)
@@ -417,10 +423,10 @@ Instead of a findings report, produce an **updated plan with implementation cont
 
 ## Command Execution
 
-Always use heredoc for multi-line prompts to Codex:
+Always use heredoc for multi-line prompts to Codex. Include ALL required flags in every invocation:
 
 ```bash
-codex exec "$(cat <<'PROMPT'
+codex exec -m gpt-5.4 -c model_reasoning_effort="xhigh" -s read-only --skip-git-repo-check "$(cat <<'PROMPT'
 Your multi-line prompt here...
 PROMPT
 )"
@@ -431,6 +437,14 @@ Set a generous timeout (up to 10 minutes) for Codex calls since `xhigh` reasonin
 ```bash
 # In Bash tool, use timeout: 600000
 ```
+
+### Required Flags Checklist
+
+Every `codex exec` call MUST include these flags (in any order):
+- `-m <model>` — model to use (default: `gpt-5.4`)
+- `-c model_reasoning_effort="<effort>"` — reasoning effort (default: `xhigh`)
+- `-s read-only` — enforce read-only sandbox
+- `--skip-git-repo-check` — avoid trusted directory errors
 
 ## Important Rules
 
