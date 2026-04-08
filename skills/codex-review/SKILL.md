@@ -53,6 +53,19 @@ Use the same model and reasoning effort for ALL rounds within a session. Do not 
 
 **Always pass `--skip-git-repo-check`** in every `codex exec` call. Without it, Codex CLI will refuse to run if the working directory is not inside a trusted git repository — this causes failures when Claude Code invokes the skill from projects not yet marked as trusted in Codex's config. Since we always run in read-only mode, skipping this check is safe.
 
+### Session Persistence
+
+Codex CLI auto-persists sessions to `~/.codex/sessions/`. Use this to maintain a **continuous conversation** across all rounds — Codex retains its own analysis, reasoning, and the full discussion history.
+
+**How it works:**
+
+1. **Round 1**: Run `codex exec --json` with all required flags. Parse the session ID from the JSONL output (look for a `session_id` field). Store it for all subsequent rounds.
+2. **Round 2+**: Run `codex exec resume <SESSION_ID> "prompt"`. This continues the existing conversation with full prior context. No need to re-pass `-m`, `-s`, `-c`, or `--skip-git-repo-check` — session settings are inherited.
+
+**Why this matters**: Without `resume`, each `codex exec` starts a blank session — Codex loses its own previous analysis, can contradict itself, and follow-up prompts must re-summarize everything. With `resume`, the conversation flows naturally and follow-up prompts are minimal.
+
+**Parallel safety**: Always capture and use the specific session ID — never use `--last`, which would pick up the wrong session if multiple reviews run concurrently.
+
 ## Token Efficiency — Let Codex Navigate
 
 **CRITICAL**: Do NOT paste file contents, git diffs, or large code blocks inline into Codex prompts. Codex CLI has full filesystem access and can read files on its own. Inlining content wastes input tokens.
@@ -158,6 +171,8 @@ Not all apply to every review — focus on what's relevant to the code at hand.
 - When you have no more findings or observations, explicitly state: "No further observations."
 ```
 
+Execute this prompt using the round 1 command format (see Command Execution). **Capture the session ID** from the `--json` JSONL output — all subsequent rounds use `codex exec resume <SESSION_ID>` to continue this conversation.
+
 ### 3. Iterative Loop (max 10 rounds per cycle)
 
 **After Round 1 (Codex's unbiased response):**
@@ -169,7 +184,7 @@ Compare Codex's findings against your internal pre-analysis:
 
 **For each subsequent round:**
 
-1. **Send follow-up to Codex** via `codex exec -m <model> -c model_reasoning_effort="<effort>" -s read-only --skip-git-repo-check "prompt"` (use heredoc for multi-line prompts)
+1. **Send follow-up to Codex** via `codex exec resume <SESSION_ID> "prompt"` (use heredoc for multi-line prompts). Codex has full context from all prior rounds — no need to re-summarize the discussion.
 2. **Analyze Codex's response**: Identify findings, agreements, disagreements, or questions
 3. **Formulate Claude Code's response**:
    - If Codex asks for more context: provide it (read the files/paths Codex requests, summarize relevant info, or point to additional paths)
@@ -181,23 +196,19 @@ Compare Codex's findings against your internal pre-analysis:
 
 **Follow-up prompt structure:**
 
+Since Codex retains full context via session persistence, follow-up prompts are minimal — just Claude Code's new input for the ongoing conversation.
+
 ```
-Continuing our review discussion. READ-ONLY mode — do NOT modify any files.
-
-## Agreed So Far
-[One-liner per finding — title and severity only. Do NOT re-explain agreed findings in full; Codex doesn't need the details again, just the reference to track state.]
-
 ## My Response to Your Findings
-[Claude Code's response to EVERY finding Codex raised — agreements AND disagreements, all at once]
+[Claude Code's agreements, disagreements, and counter-arguments for each finding Codex raised — address ALL of them at once]
 
 ## Additional Observations
-[ALL new findings from Claude Code, if any — don't hold anything back for later rounds]
+[New findings from Claude Code, if any — don't hold anything back for later rounds]
 
 ## Open Questions
-[Any clarifications needed]
+[Any clarifications needed, if any]
 
-IMPORTANT: Please respond to ALL my points at once. Address every disagreement, add ALL remaining observations you have, and confirm agreement on resolved items. Aim to cover everything in this single response.
-If you agree with everything and have nothing more to add, explicitly state: "No further observations."
+Respond to ALL my points at once. If you agree with everything and have nothing more to add, state: "No further observations."
 ```
 
 **Consensus detection**: The loop ends when Codex responds with "No further observations" (or equivalent) AND Claude Code also has nothing more to add.
@@ -224,11 +235,9 @@ Skip this phase only if there are no critical/major findings that require code c
    - **Code sketch**: the key structural parts — function signatures, type definitions, control flow — enough that two engineers would write essentially the same implementation. NOT full code, just the skeleton that disambiguates the approach.
    - **Edge cases**: specific scenarios to handle, with the agreed behavior for each
 
-2. Send ALL contracts to Codex in a single prompt:
+2. Send ALL contracts to Codex via `codex exec resume <SESSION_ID>` (same session as the findings discussion):
 
 ```
-Continuing our review. READ-ONLY mode — do NOT modify any files.
-
 We agreed on the findings. Now let's agree on HOW to implement the fixes so there's no ambiguity during implementation.
 
 For each critical/major finding, I'm proposing a concrete implementation approach. Please review each one and:
@@ -423,14 +432,33 @@ Instead of a findings report, produce an **updated plan with implementation cont
 
 ## Command Execution
 
-Always use heredoc for multi-line prompts to Codex. Include ALL required flags in every invocation:
+Always use heredoc for multi-line prompts to Codex.
+
+### Round 1 — Initial Call
+
+Include ALL required flags. Use `--json` to capture the session ID from the JSONL output:
 
 ```bash
-codex exec -m gpt-5.4 -c model_reasoning_effort="xhigh" -s read-only --skip-git-repo-check "$(cat <<'PROMPT'
+codex exec --json -m gpt-5.4 -c model_reasoning_effort="xhigh" -s read-only --skip-git-repo-check "$(cat <<'PROMPT'
 Your multi-line prompt here...
 PROMPT
 )"
 ```
+
+After execution, parse the session ID from the JSONL output and store it for subsequent rounds.
+
+### Round 2+ — Session Continuation
+
+Use `codex exec resume` with the captured session ID. Session settings (model, sandbox, reasoning effort) are inherited — no need to re-pass flags:
+
+```bash
+codex exec resume <SESSION_ID> "$(cat <<'PROMPT'
+Your follow-up prompt here...
+PROMPT
+)"
+```
+
+### Timeouts
 
 Set a generous timeout (up to 10 minutes) for Codex calls since `xhigh` reasoning can take time:
 
@@ -438,17 +466,20 @@ Set a generous timeout (up to 10 minutes) for Codex calls since `xhigh` reasonin
 # In Bash tool, use timeout: 600000
 ```
 
-### Required Flags Checklist
+### Required Flags Checklist (Round 1 only)
 
-Every `codex exec` call MUST include these flags (in any order):
+The initial `codex exec` call MUST include these flags (in any order):
+- `--json` — JSONL output to capture session ID
 - `-m <model>` — model to use (default: `gpt-5.4`)
 - `-c model_reasoning_effort="<effort>"` — reasoning effort (default: `xhigh`)
 - `-s read-only` — enforce read-only sandbox
 - `--skip-git-repo-check` — avoid trusted directory errors
 
+Subsequent `codex exec resume` calls only need the session ID and the prompt — all settings are inherited from the original session.
+
 ## Important Rules
 
-- **Never skip the read-only constraint** in any prompt to Codex. Include it in EVERY message.
+- **Never skip the read-only constraint**. Include it in the initial prompt and enforce via `-s read-only`. With session persistence, Codex retains this constraint across rounds.
 - **Never auto-implement fixes**. The user decides what to act on.
 - **Pass paths, not content**. Never inline file contents or diffs. Give Codex file paths, directory paths, or git commands and let it read on its own. Only inline content that doesn't exist as files (plans, requirements, conversation context).
 - **KISS**. Both sides should favor the simplest solution. If a simpler approach works, prefer it.
