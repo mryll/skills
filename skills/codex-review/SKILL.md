@@ -1,6 +1,6 @@
 ---
 name: codex-review
-version: 1.0.0
+version: 1.0.1
 description: "Iterative code review and planning discussion between the local agent and Codex CLI (model and reasoning effort taken from the user's local Codex configuration at ~/.codex/config.toml, overridable per invocation). Orchestrates an automatic back-and-forth debate where both agents discuss findings, architecture decisions, or implementation plans until reaching consensus. Codex CLI operates in READ-ONLY mode — it never modifies files. Supports plan mode: when the local agent has a plan ready, invoke this skill to have Codex evaluate and iterate on the plan before implementation, producing an updated consensus plan. Use when the user asks to review with codex, analyze with codex, discuss with codex, iterate with codex, consult codex, ask codex, review the plan with codex, validate plan with codex, or any request involving Codex CLI for code review, architecture review, planning discussion, or collaborative analysis of code, design, or implementation strategy."
 ---
 
