@@ -1,6 +1,6 @@
 ---
 name: dual-testing
-version: 1.0.0
+version: 1.0.1
 description: "Go dual testing strategy: integration tests (testcontainers) verify full-chain wiring for happy paths, unit tests (testify/mock) verify error handling logic. Apply when designing test strategy for a Go project, creating a new handler or feature that needs tests, or deciding what type of test to write for a scenario. Triggers: 'dual testing', 'error path coverage', 'testcontainers vs mocks', 'what type of test', 'where should this test go', 'integration vs unit', creating Go handlers/features/workers that need tests. Does NOT trigger on: writing individual test assertions, renaming tests, test naming conventions (use test-namer for those)."
 ---
 

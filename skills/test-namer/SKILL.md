@@ -1,6 +1,6 @@
 ---
 name: test-namer
-version: 1.0.0
+version: 1.0.1
 description: "Guide for writing expressive, behavior-focused tests following Vladimir Khorikov's testing principles. Apply when writing, reviewing, or renaming any test (unit, integration, e2e) in any programming language. Triggers: writing tests, creating test files, adding test cases, reviewing test names, 'test naming', 'rename tests', 'Khorikov', or any test creation task. Covers: naming conventions (plain English over rigid policies), what to test (behavior not implementation), testing styles (output > state > communication), and pragmatic test investment."
 ---
 
