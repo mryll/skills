@@ -10,7 +10,7 @@ Skills are markdown-only instructions that shape how your coding agent writes, r
 
 | Skill | Description |
 |---|---|
-| **[agentmd](skills/agentmd)** | Generate minimal, research-backed `CLAUDE.md` / `AGENTS.md` context files. Based on [ETH Zurich research](https://arxiv.org/abs/2502.11911) showing that auto-generated context files *decrease* performance while minimal human-written ones improve it. |
+| **[agentmd](skills/agentmd)** | Generate a single canonical `AGENTS.md` plus minimal CLI-specific shims that `@-import` it for tools that don't read `AGENTS.md` natively (Claude Code, Gemini CLI, Qwen Code). Based on [ETH Zurich research](https://arxiv.org/abs/2502.11911) showing that auto-generated context files *decrease* performance while minimal human-written ones improve it. |
 | **[low-complexity](skills/low-complexity)** | Automatically enforce low Cognitive Complexity (SonarSource) and Cyclomatic Complexity in all generated code. Activates on every code write/modify — no explicit trigger needed. |
 | **[vertical-slice-architecture](skills/vertical-slice-architecture)** | Organize code by feature/use-case instead of technical layers. Works with any language and app type (web API, CLI, event-driven, etc.). |
 | **[codex-review](skills/codex-review)** | Iterative code review debate between Claude Code and Codex CLI until both reach consensus. Supports plan-mode review with implementation contracts. |
