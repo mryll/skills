@@ -14,6 +14,7 @@ Skills are markdown-only instructions that shape how your coding agent writes, r
 | **[low-complexity](skills/low-complexity)** | Automatically enforce low Cognitive Complexity (SonarSource) and Cyclomatic Complexity in all generated code. Activates on every code write/modify — no explicit trigger needed. |
 | **[vertical-slice-architecture](skills/vertical-slice-architecture)** | Organize code by feature/use-case instead of technical layers. Works with any language and app type (web API, CLI, event-driven, etc.). |
 | **[codex-review](skills/codex-review)** | Iterative code review debate between Claude Code and Codex CLI until both reach consensus. Supports plan-mode review with implementation contracts. |
+| **[codex-discuss](skills/codex-discuss)** | Iterative non-code debate between Claude Code and Codex CLI on any topic — diet, fitness, writing, decisions, strategy, brainstorming. Same iterative consensus mechanic as codex-review, adapted for open-ended subjects (content inline, no filesystem navigation). |
 | **[test-namer](skills/test-namer)** | Write expressive, behavior-focused tests following Vladimir Khorikov's testing principles. Plain English names, test behavior not implementation. |
 | **[dual-testing](skills/dual-testing)** | Go dual testing strategy: integration tests (testcontainers) verify full-chain wiring for happy paths, unit tests (testify/mock) verify error handling logic. Avoids duplicating happy paths across layers. |
 
@@ -49,5 +50,6 @@ Once installed, skills activate automatically based on context. Some examples:
 - **low-complexity** — Activates automatically whenever code is written or modified
 - **vertical-slice-architecture** — Ask to "use vertical slice architecture" or start building features in a VSA project
 - **codex-review** — Ask to "review with codex" or "validate plan with codex"
+- **codex-discuss** — Ask to "discuss with codex", "iterate this with codex", or "get codex's take on this" (non-code topics: diet, fitness, writing, decisions, etc.)
 - **test-namer** — Activates whenever tests are written, created, or reviewed
 - **dual-testing** — Ask "where should this test go?" or activates when designing test strategy for a Go handler/feature
