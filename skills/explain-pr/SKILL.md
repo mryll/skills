@@ -15,7 +15,7 @@ This replaces the manual prompt a user would otherwise type ("explain what you d
 Trigger it on your own, without waiting to be asked, right after a PR/MR is created or finished — that's the moment the user wants the recap. Concretely:
 
 - Just after `gh pr create`, `glab mr create`, or opening a PR/MR through any other means.
-- When the user says things like "explica lo que hiciste", "explain the PR", "what did you change?", "walk me through this MR", "recap the changes".
+- When the user says things like "explain the PR", "what did you change?", "walk me through this MR", "recap the changes" — in any language.
 
 If you just finished a PR/MR in this same conversation, you already did the work — you know most of the *why* firsthand. Use that, but still anchor the *what* and *how* in the real diff (see below) so nothing is misremembered or invented.
 
@@ -52,7 +52,7 @@ If you can't establish a clean range (e.g. the PR is already merged, or you're s
 
 ### 2. Gather the "why"
 
-The diff tells you *what* and *how*, but rarely *why*. Pull the intent from, in order: the conversation you just had, the PR/MR title and description, the commit messages, and any referenced issue/ticket. If, after all that, the reason for a change genuinely isn't recoverable, say so plainly ("no encontré en qué se basa este cambio") instead of inventing a motivation. A confident-sounding made-up reason is worse than an honest gap.
+The diff tells you *what* and *how*, but rarely *why*. Pull the intent from, in order: the conversation you just had, the PR/MR title and description, the commit messages, and any referenced issue/ticket. If, after all that, the reason for a change genuinely isn't recoverable, say so plainly ("I couldn't find what this change is based on") instead of inventing a motivation. A confident-sounding made-up reason is worse than an honest gap.
 
 ### 3. Write the explanation
 
@@ -60,16 +60,16 @@ Compose the recap using the structure below. Keep it grounded: every code snippe
 
 ## Output structure
 
-Deliver it in the chat using **exactly these three sections, always, in this order** (translate the headings into the conversation's language). This fixed shape is the whole point: it makes the output predictable across runs, models, and agents instead of leaving the format up to each model's interpretation. A reader should recognize the layout at a glance, every single time.
+Deliver it in the chat using **exactly these three sections, always, in this order**. Use these exact headings, translated into the conversation's language when you're explaining in another language. This fixed shape is the whole point: it makes the output predictable across runs, models, and agents instead of leaving the format up to each model's interpretation. A reader should recognize the layout at a glance, every single time.
 
 ```
-## 📋 Qué hice
+## 📋 What I did
 <1–3 sentences, plain language: the change in a nutshell. No jargon dumps.>
 
-## 🎯 Por qué / para qué
+## 🎯 Why / what for
 <The problem, need, or goal this addresses. Tie it to the user's intent.>
 
-## 🔧 Cómo lo hice
+## 🔧 How I did it
 <The approach, walked through in the order that makes it easiest to follow.
  Embed the relevant code as fenced blocks with a `file:line` reference, e.g.:>
 
@@ -84,31 +84,31 @@ export function verifyToken(raw: string) {
  changes together rather than going file-by-file in arbitrary order.>
 ```
 
-Keep all three sections even for a tiny PR (a one-line fix, a config tweak) — that consistency is what makes the output predictable. What scales with the size of the change is the *amount of detail inside* each section, not whether the section exists: for a trivial change each section can be a single line; for a large PR, lead **Cómo lo hice** with the headline change, group the rest by area, and prioritize what a reviewer most needs to understand. Trim filler, never drop a section.
+Keep all three sections even for a tiny PR (a one-line fix, a config tweak) — that consistency is what makes the output predictable. What scales with the size of the change is the *amount of detail inside* each section, not whether the section exists: for a trivial change each section can be a single line; for a large PR, lead **How I did it** with the headline change, group the rest by area, and prioritize what a reviewer most needs to understand. Trim filler, never drop a section.
 
 **Pin each snippet to the real line.** The `file:line` reference must point to where the code actually lives so the user clicks straight to it — don't default to `:1`:
 
 - Modified file → the line of the actual change. Read the diff's hunk headers (the `@@ -x,y +a,b @@` markers give you the new line numbers), or grep the file for the changed code to find its current line.
 - New file → `:1`, or the line where the relevant function/section starts.
 
-**Show the *before* when a change alters existing behavior.** Seeing only the final code hides what actually changed. When a PR modifies behavior that already existed, include the prior version too — a `// antes` / `// después` pair of snippets, or a short before/after table — so the contrast makes the change obvious. Get the base side from `git show <base>:<path>` or the `-` lines of the diff. Skip this for brand-new files (there's no "before") and for trivial changes where it would just add noise; the goal is clarity, not ceremony.
+**Show the *before* when a change alters existing behavior.** Seeing only the final code hides what actually changed. When a PR modifies behavior that already existed, include the prior version too — a `// before` / `// after` pair of snippets, or a short before/after table — so the contrast makes the change obvious. Get the base side from `git show <base>:<path>` or the `-` lines of the diff. Skip this for brand-new files (there's no "before") and for trivial changes where it would just add noise; the goal is clarity, not ceremony.
 
 ## How to write it (behavioral rules, and why)
 
 - **Match the conversation's language.** Write the whole explanation in whatever language the user has been speaking. If they've been writing in Spanish, explain in Spanish; if English, English. The user reads this to understand their own project — meet them where they are.
 - **Scale detail, not shape.** The three sections are always present; what varies with the PR's size is how much you write inside them — terse for a small change, fuller for a big one. Keeping the shape fixed while flexing the depth is deliberate: it's what gives the user a predictable output instead of a fresh improvisation each time, without padding trivial changes or rushing large ones.
 - **Anchor everything in the real diff.** The *what* and *how* must reflect code that's actually in the diff — real file paths, real lines. This is the guardrail against plausible-sounding fiction. The *why* can come from context, but flag it when it's missing rather than filling the gap with a guess.
-- **Plain over precise-but-dense.** Favor language a teammate could skim and get. Define a term if the change introduces an unusual one, but don't lecture. The user asked for "fácil y simple de entender" — honor that.
+- **Plain over precise-but-dense.** Favor language a teammate could skim and get. Define a term if the change introduces an unusual one, but don't lecture. The user wants it "easy and simple to understand" — honor that.
 - **Explain, don't review.** Resist the urge to critique or suggest. If you genuinely spot something that looks wrong, you can flag it in one line at the end, but the body stays explanatory.
 
 ## Example (shape, not content)
 
 For a PR that adds rate limiting to an API endpoint, a good recap reads like:
 
-> **📋 Qué hice** — Agregué un límite de requests por IP al endpoint de login para frenar intentos de fuerza bruta.
+> **📋 What I did** — Added a per-IP request limit to the login endpoint to curb brute-force attempts.
 >
-> **🎯 Por qué** — Veníamos sin protección contra brute force en `/login`; un atacante podía probar miles de contraseñas. Esto cierra esa puerta.
+> **🎯 Why** — `/login` had no brute-force protection; an attacker could try thousands of passwords. This closes that door.
 >
-> **🔧 Cómo** — Metí un middleware con una ventana deslizante… *(then the actual middleware snippet with its `file:line`, and a line on how it's wired in).*
+> **🔧 How I did it** — Added a sliding-window middleware… *(then the actual middleware snippet with its `file:line`, and a line on how it's wired in).*
 
 The headings are fixed; the prose, snippets, and depth come from the actual change.
