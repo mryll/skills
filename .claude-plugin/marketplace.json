@@ -21,7 +21,8 @@
         "./skills/codex-review",
         "./skills/codex-discuss",
         "./skills/test-namer",
-        "./skills/dual-testing"
+        "./skills/dual-testing",
+        "./skills/explain-pr"
       ]
     }
   ]

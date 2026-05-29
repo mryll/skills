@@ -17,6 +17,7 @@ Skills are markdown-only instructions that shape how your coding agent writes, r
 | **[codex-discuss](skills/codex-discuss)** | Iterative non-code debate between Claude Code and Codex CLI on any topic — diet, fitness, writing, decisions, strategy, brainstorming. Same iterative consensus mechanic as codex-review, adapted for open-ended subjects (content inline, no filesystem navigation). |
 | **[test-namer](skills/test-namer)** | Write expressive, behavior-focused tests following Vladimir Khorikov's testing principles. Plain English names, test behavior not implementation. |
 | **[dual-testing](skills/dual-testing)** | Go dual testing strategy: integration tests (testcontainers) verify full-chain wiring for happy paths, unit tests (testify/mock) verify error handling logic. Avoids duplicating happy paths across layers. |
+| **[explain-pr](skills/explain-pr)** | Explain a freshly opened Pull Request or Merge Request back to you in plain language — what changed, why, and how — with the relevant code snippets inline. Fixed, predictable structure; reads the local git diff, so no `gh`/`glab` required. |
 
 ## Installation
 
@@ -53,3 +54,4 @@ Once installed, skills activate automatically based on context. Some examples:
 - **codex-discuss** — Ask to "discuss with codex", "iterate this with codex", or "get codex's take on this" (non-code topics: diet, fitness, writing, decisions, etc.)
 - **test-namer** — Activates whenever tests are written, created, or reviewed
 - **dual-testing** — Ask "where should this test go?" or activates when designing test strategy for a Go handler/feature
+- **explain-pr** — Ask to "explicame el PR/MR", "walk me through this PR", or run `/explain-pr` right after opening a PR/MR. Optional: to fire it automatically after every PR/MR, add a line like "when you create a PR/MR, invoke explain-pr" to your `AGENTS.md`/`CLAUDE.md`.
