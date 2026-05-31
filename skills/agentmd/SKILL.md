@@ -1,6 +1,6 @@
 ---
 name: agentmd
-version: 1.1.0
+version: 1.2.0
 description: Generate a single canonical AGENTS.md context file plus minimal CLI-specific shim files that @-import it for coding agents that do not read AGENTS.md natively (Claude Code, Gemini CLI, Qwen Code). Based on "Evaluating AGENTS.md" (ETH Zurich, Feb 2026) which found auto-generated context files DECREASE performance by ~3% and increase costs by 20-23%, while minimal human-written files improve performance by ~4%. Use when the user says "generate CLAUDE.md", "create AGENTS.md", "generate context file", "agentmd", "create recommended CLAUDE.md", "generate agent instructions", "init context file", or any request to create/improve a coding agent context file for a repository. Replaces the default /init command which generates bloated, counterproductive context files.
 ---
 
@@ -207,3 +207,5 @@ See [references/paper-findings.md](references/paper-findings.md) for detailed me
 - Agents follow tool mentions reliably (usage jumps from 0.01 to 1.6x/instance)
 - Overviews don't help agents find files faster
 - More content = +14-22% reasoning tokens without improvement
+
+A second study reinforces this from the efficiency angle — Lulla et al., "On the Impact of AGENTS.md Files on the Efficiency of AI Coding Agents" ([arxiv.org/abs/2601.20404](https://arxiv.org/abs/2601.20404), ICSE JAWs 2026). On Codex, a minimal *curated* root `AGENTS.md` cut **median completion time by 28.6%** and **output tokens by ~20%** (success rate not measured). So a good context file isn't only "less harmful" — it's measurably faster and cheaper, and that gain comes from curated conventions, not overviews. Both papers point the same way: keep it minimal and convention-focused.

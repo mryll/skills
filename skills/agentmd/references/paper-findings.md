@@ -43,3 +43,23 @@
 1. Repos with little/no existing documentation — LLM-generated files improve by +2.7%
 2. Specifying mandatory tooling (build commands, test runners, formatters)
 3. Documenting non-obvious constraints the agent would trip over
+
+## Complementary evidence: efficiency (Lulla et al., ICSE JAWs 2026)
+
+**Paper:** [https://arxiv.org/abs/2601.20404](https://arxiv.org/abs/2601.20404) — "On the Impact of AGENTS.md Files on the Efficiency of AI Coding Agents." Lulla, Mohsenimofidi, Galster, Zhang, Baltes & Treude. Paired study on Codex (`gpt-5.2-codex`): 124 real PRs from 10 repos that ship a curated root `AGENTS.md`, each task run with and without the file (same task/repo/state).
+
+This measures a **different axis than Gloaguen**: operational **efficiency** (wall-clock time + tokens), not resolution rate.
+
+| Metric | Δ median | Δ mean | Significant? |
+|---|---|---|---|
+| Wall-clock time | **−28.6%** | −20.3% | yes (Wilcoxon p<0.05) |
+| Output tokens | **−16.6%** | −20.1% | yes |
+| Input / total tokens | ~flat | ≈−10% | no |
+
+### Takeaways for this skill
+
+1. A minimal, curated `AGENTS.md` is not merely "less harmful" — it makes the agent **faster and cheaper per output**. A *positive* reason for minimalism, not just harm-avoidance.
+2. The gain comes from **curated conventions** (the "Non-Obvious Rules" / "Project-Specific Patterns" this skill already recommends), NOT from overviews or structure dumps — Gloaguen measured that overviews don't help agents find files faster. The include/exclude line in this skill is unchanged.
+3. **Caveats:** Codex-only (one model); efficiency axis only (output quality / success rate not measured). Don't overgeneralize the magnitudes.
+
+**Combined reading:** what you measure differs, but both papers point the same way — the value is in a *curated, minimal* file. Bloat (auto-generated overviews, duplicated docs) hurts success rate (Gloaguen); curation helps efficiency (Lulla). Keep it minimal and convention-focused.
