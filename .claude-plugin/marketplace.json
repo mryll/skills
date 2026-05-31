@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "Curated agent skills for Claude Code",
-    "version": "1.2.0"
+    "version": "1.2.1"
   },
   "plugins": [
     {
       "name": "mryll-skills",
       "source": "./",
       "description": "Mryll's collection of research-backed Claude Code skills",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "strict": false,
       "skills": [
         "./skills/agentmd",

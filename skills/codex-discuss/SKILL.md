@@ -1,6 +1,6 @@
 ---
 name: codex-discuss
-version: 1.0.1
+version: 1.0.2
 description: "Iterative non-code discussion between the local agent and Codex CLI on any open-ended topic: diet, fitness, writing, decisions, strategy, study plans, life choices, brainstorming. Orchestrates an automatic back-and-forth debate where both agents critique, propose alternatives, and iterate on the user's idea until reaching consensus. Codex CLI runs READ-ONLY, forms its own opinions, and normally does not navigate the filesystem unless the user provides file paths. Use when the user says discuss with codex, iterate with codex, consult codex, debate with codex, ask codex for a second opinion, get codex's take, or brainstorm with codex, including pasting or describing a plan, draft, idea, decision, or proposal and wanting a critical iterative review. Does NOT trigger on code review, plan-mode review of implementation plans, architecture discussions, or any technical software-engineering analysis; use codex-review for those."
 ---
 
@@ -84,12 +84,22 @@ Codex CLI auto-persists sessions to `~/.codex/sessions/`. Use this to maintain a
 
 **How it works:**
 
-1. **Round 1**: Run `codex exec --json` with all required flags. Read the session ID from the JSONL output — Codex emits it in the `thread.started` event — and reuse it for all subsequent rounds.
-2. **Round 2+**: Run `codex exec resume --skip-git-repo-check <SESSION_ID> "prompt"`. This continues the existing conversation with full prior context. Model, sandbox, and reasoning effort are inherited from the session — only `--skip-git-repo-check` is re-passed.
+1. **Round 1**: Run `codex exec --json -o <FILE>` with all required flags. Read the session ID from the JSONL stdout — Codex emits it in the `thread.started` event — and reuse it for all subsequent rounds. Read Codex's reply from `<FILE>` (see *Reading Codex's Reply*).
+2. **Round 2+**: Run `codex exec resume --skip-git-repo-check -o <FILE> <SESSION_ID> "prompt"`. This continues the existing conversation with full prior context. Model, sandbox, and reasoning effort are session settings and ARE inherited — do NOT re-pass `-m`/`-c`/`-s`. But `-o` (and `--json`) are per-invocation output flags, NOT session settings: they are never inherited, so `-o <FILE>` must be re-passed every round to get the reply out cleanly.
 
 **Why this matters**: Without `resume`, each `codex exec` starts a blank session — Codex loses its own previous analysis, can contradict itself, and follow-up prompts must re-summarize everything. With `resume`, the conversation flows naturally and follow-up prompts are minimal.
 
 **Parallel safety**: Always reuse the specific session ID noted in round 1 — never use `--last`, which would pick up the wrong session if multiple discussions run concurrently.
+
+### Reading Codex's Reply
+
+Codex's response is read from a file, NOT scraped from stdout. Pass `-o <FILE>` (`--output-last-message`) on **every** round — round 1 and every `resume` — and read that file immediately after each call. It contains ONLY Codex's final message: no banner, no echoed prompt, no reasoning trace, no command output, no token-usage footer.
+
+**Why a file, not stdout**: `--json` makes round 1 emit clean JSONL, but it is a per-invocation output flag — NOT a session setting, and NOT inherited by `resume`. A `resume` without it prints human-formatted TUI text (a config banner, the echoed prompt, then the reply interleaved with reasoning and any command output), which is fragile to parse and pushes you toward digging through `~/.codex/sessions/` logs. `-o <FILE>` sidesteps all of that: the reply is always in one clean file, and large replies are read with the Read tool instead of risking stdout truncation.
+
+**File naming (concurrency)**: pick ONE output path with a random suffix at the start of the discussion — e.g. `${TMPDIR:-/tmp}/codex-msg-<rand>.txt`, where `<rand>` is freshly generated — and reuse the **same literal path** for every round. Each round overwrites it with that round's reply, which you read right after the call. Hold the path in working memory alongside the session ID: each `codex` call runs in a fresh shell, so a shell variable would not carry over between rounds — substitute the fixed literal path each time. A per-discussion unique name keeps concurrent discussions from clobbering each other's file (the same reason `--last` is banned — see *Parallel safety*).
+
+**Session ID still comes from stdout**: the `thread_id` appears ONLY in the round-1 JSONL stream (the `thread.started` event), never in the `-o` file — so round 1 keeps `--json` to capture it. Round 2+ does not need `--json`: the session ID is already known and the reply comes from `-o <FILE>`; ignore the TUI chrome that `resume` prints to stdout.
 
 ## Inline Content vs Paths
 
@@ -234,7 +244,7 @@ Look for what's relevant — not all apply to every topic:
 - When you have no more findings or observations, explicitly state: "No further observations."
 ```
 
-Execute this prompt using the round 1 command format (see Command Execution). **Note the session ID** from the `--json` JSONL output — all subsequent rounds use `codex exec resume <SESSION_ID>` to continue this conversation.
+Execute this prompt using the round 1 command format (see Command Execution). **Note the session ID** from the `--json` JSONL stdout (`thread.started` event) and **read Codex's reply from the `-o` file** (see *Reading Codex's Reply*) — all subsequent rounds use `codex exec resume <SESSION_ID>` to continue this conversation, reusing the same `-o` file.
 
 ### 3. Iterative Loop (max 10 rounds per cycle)
 
@@ -247,7 +257,7 @@ Compare Codex's findings against your internal pre-analysis:
 
 **For each subsequent round:**
 
-1. **Send follow-up to Codex** via `codex exec resume <SESSION_ID> "prompt"` (use heredoc for multi-line prompts). Codex has full context from all prior rounds — no need to re-summarize the discussion.
+1. **Send follow-up to Codex** via `codex exec resume --skip-git-repo-check -o <FILE> <SESSION_ID> "prompt"` (use heredoc for multi-line prompts; reuse the round-1 reply file and read Codex's response from it — see Command Execution). Codex has full context from all prior rounds — no need to re-summarize the discussion.
 2. **Analyze Codex's response**: identify findings, agreements, disagreements, or questions
 3. **Formulate the local agent's response**:
    - If Codex asks for more context: provide it
@@ -406,32 +416,34 @@ Always use heredoc for multi-line prompts to Codex.
 
 ### Round 1 — Initial Call
 
-Include ALL required flags. Use `--json` to obtain the session ID from the JSONL output. **Always redirect stdin with `< /dev/null`** — when invoked from any non-interactive shell (agent harnesses running shell tools, CI runners, background processes, scripts piping into other commands), stdin is non-TTY but still open, and Codex CLI hangs on "Reading additional input from stdin..." instead of using the prompt argument. Closing stdin forces Codex to rely solely on the positional prompt:
+Include ALL required flags. Use `--json` to obtain the session ID from the JSONL stdout, and `-o <FILE>` to capture Codex's reply in a clean file (see *Reading Codex's Reply*). **Always redirect stdin with `< /dev/null`** — when invoked from any non-interactive shell (agent harnesses running shell tools, CI runners, background processes, scripts piping into other commands), stdin is non-TTY but still open, and Codex CLI hangs on "Reading additional input from stdin..." instead of using the prompt argument. Closing stdin forces Codex to rely solely on the positional prompt:
 
 ```bash
-codex exec --json -s read-only --skip-git-repo-check "$(cat <<'PROMPT'
+# Pick ONE reply file for the whole discussion and reuse the same literal path every round,
+# e.g. /tmp/codex-msg-7f3a.txt (random suffix; see *Reading Codex's Reply*).
+codex exec --json -o /tmp/codex-msg-7f3a.txt -s read-only --skip-git-repo-check "$(cat <<'PROMPT'
 Your multi-line prompt here...
 PROMPT
 )" < /dev/null
 
 # If the user overrode model and/or effort in their trigger message, add them:
-# codex exec --json -m <model> -c model_reasoning_effort="<effort>" -s read-only --skip-git-repo-check "..." < /dev/null
+# codex exec --json -o /tmp/codex-msg-7f3a.txt -m <model> -c model_reasoning_effort="<effort>" -s read-only --skip-git-repo-check "..." < /dev/null
 ```
 
-After execution, read the session ID from the JSONL output and reuse it for subsequent rounds.
+After execution, read the session ID from the JSONL stdout (`thread.started` event) and reuse it for subsequent rounds; read Codex's reply from the `-o` file.
 
 ### Round 2+ — Session Continuation
 
-Use `codex exec resume` with the session ID noted in round 1. Session settings (model, sandbox, reasoning effort) are inherited from the session; only `--skip-git-repo-check` is re-passed, so resume works from any directory:
+Use `codex exec resume` with the session ID noted in round 1. Session settings (model, sandbox, reasoning effort) are inherited, so `-m`/`-c`/`-s` are NOT re-passed. But `-o <FILE>` is a per-invocation output flag, not a session setting — re-pass it every round so the reply lands in the clean file (see *Reading Codex's Reply*); `--skip-git-repo-check` is also re-passed so resume works from any directory. Reuse the SAME literal reply-file path chosen in round 1:
 
 ```bash
-codex exec resume --skip-git-repo-check <SESSION_ID> "$(cat <<'PROMPT'
+codex exec resume --skip-git-repo-check -o /tmp/codex-msg-7f3a.txt <SESSION_ID> "$(cat <<'PROMPT'
 Your follow-up prompt here...
 PROMPT
 )" < /dev/null
 ```
 
-The `< /dev/null` redirection is required on every `codex exec` and `codex exec resume` call for the same reason explained in Round 1 — without it, the process hangs waiting for stdin in non-interactive contexts.
+`resume` prints a TUI banner and the reply to stdout in human format — ignore it and read Codex's reply from the `-o` file instead. The `< /dev/null` redirection is required on every `codex exec` and `codex exec resume` call for the same reason explained in Round 1 — without it, the process hangs waiting for stdin in non-interactive contexts.
 
 ### Timeouts
 
@@ -441,10 +453,11 @@ Set a generous timeout (up to 10 minutes) for Codex calls since high reasoning e
 # In Bash tool, use timeout: 600000
 ```
 
-### Required Flags Checklist (Round 1 only)
+### Required Flags Checklist (Round 1)
 
 The initial `codex exec` call MUST include these flags (in any order):
-- `--json` — JSONL output to obtain session ID
+- `--json` — JSONL output to obtain the session ID (round 1 only — `thread_id` appears only here)
+- `-o <FILE>` — write Codex's final message to a clean file (every round; see *Reading Codex's Reply*)
 - `-s read-only` — enforce read-only sandbox
 - `--skip-git-repo-check` — avoid trusted directory errors
 - `< /dev/null` (stdin redirection, not a flag) — required to prevent Codex CLI from hanging waiting for stdin input in non-interactive contexts
@@ -453,7 +466,7 @@ Optional flags (pass ONLY when the user overrides defaults in the trigger messag
 - `-m <model>` — model to use (otherwise inherited from `~/.codex/config.toml`)
 - `-c model_reasoning_effort="<effort>"` — reasoning effort (otherwise inherited from `~/.codex/config.toml`)
 
-Subsequent `codex exec resume` calls inherit model, sandbox, and reasoning effort from the session; still pass `--skip-git-repo-check`, the session ID, and the prompt. The `< /dev/null` redirection is still required.
+Subsequent `codex exec resume` calls inherit model, sandbox, and reasoning effort from the session — do NOT re-pass `-m`/`-c`/`-s`. Still pass `--skip-git-repo-check`, the session ID, the prompt, and `-o <FILE>` (the same literal path from round 1 — `-o` is per-invocation, never inherited). Round 2+ does NOT need `--json`. The `< /dev/null` redirection is still required.
 
 ## Security Model
 
