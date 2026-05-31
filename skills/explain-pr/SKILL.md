@@ -62,7 +62,7 @@ Compose the recap using the structure below. Keep it grounded: every code snippe
 
 Deliver it in the chat using **exactly these three sections, always, in this order**. Use these exact headings, translated into the conversation's language when you're explaining in another language. This fixed shape is the whole point: it makes the output predictable across runs, models, and agents instead of leaving the format up to each model's interpretation. A reader should recognize the layout at a glance, every single time.
 
-```
+````
 ## 📋 What I did
 <1–3 sentences, plain language: the change in a nutshell. No jargon dumps.>
 
@@ -74,15 +74,15 @@ Deliver it in the chat using **exactly these three sections, always, in this ord
  Embed the relevant code as fenced blocks with a `file:line` reference, e.g.:>
 
 `src/auth/token.ts:42`
-​```ts
+```ts
 export function verifyToken(raw: string) {
   // ...the actual lines from the diff...
 }
-​```
+```
 
 <Explain what each shown snippet does and why it matters. Group related
  changes together rather than going file-by-file in arbitrary order.>
-```
+````
 
 Keep all three sections even for a tiny PR (a one-line fix, a config tweak) — that consistency is what makes the output predictable. What scales with the size of the change is the *amount of detail inside* each section, not whether the section exists: for a trivial change each section can be a single line; for a large PR, lead **How I did it** with the headline change, group the rest by area, and prioritize what a reviewer most needs to understand. Trim filler, never drop a section.
 
