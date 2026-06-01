@@ -1,6 +1,6 @@
 ---
 name: vertical-slice-architecture
-version: 1.0.1
+version: 1.0.2
 description: Enforce Vertical Slice Architecture (VSA) when building applications in any language (Go, .NET/C#, Java, Kotlin, TypeScript, Python, etc.) and any type (web API, mobile backend, CLI, event-driven). Organize code by feature/use-case instead of technical layers. Each feature is a self-contained vertical slice with a single entry point that receives the router/framework handle and its dependencies. Use when the user says "vertical slice architecture", "VSA", "organizar por feature", "feature-based architecture", "slice architecture", or when building a new app or feature and the project already follows VSA conventions. Also use when reviewing or refactoring code to align with VSA principles.
 ---
 
@@ -69,13 +69,11 @@ Detect the project's language/framework and consult the appropriate reference:
 
 Every feature exposes one primary setup/registration function. Internal types stay private. The entry point name is conventional — the invariant is: **one public function per feature that wires the slice to the framework**.
 
-| Language | Convention | Signature | DI mechanism |
-|----------|-----------|-----------|--------------|
-| Go | `Setup` or `RegisterRoute` | `func Setup(r gin.IRoutes, repo Repository)` | Explicit params |
-| .NET | `Map` (static) | `static void Map(IEndpointRouteBuilder app)` | DI container resolves deps in handler |
-| Java/Kotlin | `@RestController` class | Controller discovered by component scan | Spring DI (constructor injection) |
-| TypeScript | `setup` | `function setup(router: Router, db: Database): void` | Explicit params |
-| Python | `setup` | `def setup(router: APIRouter, db: Database) -> None` | Explicit params or `Depends()` |
+- **Go** — convention `Setup` or `RegisterRoute`; signature `func Setup(r gin.IRoutes, repo Repository)`; DI via explicit params.
+- **.NET** — convention `Map` (static); signature `static void Map(IEndpointRouteBuilder app)`; DI container resolves deps in handler.
+- **Java/Kotlin** — `@RestController` class discovered by component scan; Spring DI (constructor injection).
+- **TypeScript** — convention `setup`; signature `function setup(router: Router, db: Database): void`; DI via explicit params.
+- **Python** — convention `setup`; signature `def setup(router: APIRouter, db: Database) -> None`; DI via explicit params or `Depends()`.
 
 **Exceptions**: Versioned APIs may have `SetupV1`/`SetupV2` wrappers sharing internal handler wiring. Frameworks with auto-discovery (Spring, NestJS) use the controller/module class itself as the entry point.
 

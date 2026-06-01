@@ -1,6 +1,6 @@
 ---
 name: dual-testing
-version: 1.0.1
+version: 1.0.2
 description: "Go dual testing strategy: integration tests (testcontainers) verify full-chain wiring for happy paths, unit tests (testify/mock) verify error handling logic. Apply when designing test strategy for a Go project, creating a new handler or feature that needs tests, or deciding what type of test to write for a scenario. Triggers: 'dual testing', 'error path coverage', 'testcontainers vs mocks', 'what type of test', 'where should this test go', 'integration vs unit', creating Go handlers/features/workers that need tests. Does NOT trigger on: writing individual test assertions, renaming tests, test naming conventions (use test-namer for those)."
 ---
 
@@ -21,20 +21,18 @@ Some natural overlap on boundary scenarios (400, 404) is acceptable because the 
 
 Use this to decide where a test scenario belongs:
 
-| Scenario | Test type | Why |
-|---|---|---|
-| Happy path (successful CRUD) | Integration | Proves real wiring works |
-| Handler input validation → 400 | Unit | Pure handler logic, no infra needed |
-| Middleware validation (e.g., idempotency key) → 400 | Integration | Requires the real middleware chain |
-| Resource not found → 404 | Both acceptable | Integration: proves chain. Unit: proves error mapping |
-| Database/infra error → 500 | Unit | Cannot force reliably with real infra |
-| Circuit breaker open → 503 | Unit | Resilience pattern (e.g., gobreaker) |
-| Context canceled → 499 | Unit | Timeout handling |
-| Complex business logic (TTL defaults, OL) | Unit | Does not need real infra |
-| Idempotency / deduplication | Integration | Requires real state in DB |
-| Notifications (pg_notify, events) | Integration | Side effect of real infra |
-| Side effects in another DB (e.g., Mongo collections) | Integration | Verifies real effect |
-| Empty list serialization (`[]` vs `null`) | Integration | Contract verified with real DB |
+- **Happy path (successful CRUD)** — **Integration**: proves real wiring works
+- **Handler input validation → 400** — **Unit**: pure handler logic, no infra needed
+- **Middleware validation (e.g., idempotency key) → 400** — **Integration**: requires the real middleware chain
+- **Resource not found → 404** — **Both acceptable**: Integration proves the chain; Unit proves error mapping
+- **Database/infra error → 500** — **Unit**: cannot force reliably with real infra
+- **Circuit breaker open → 503** — **Unit**: resilience pattern (e.g., gobreaker)
+- **Context canceled → 499** — **Unit**: timeout handling
+- **Complex business logic (TTL defaults, OL)** — **Unit**: does not need real infra
+- **Idempotency / deduplication** — **Integration**: requires real state in DB
+- **Notifications (pg_notify, events)** — **Integration**: side effect of real infra
+- **Side effects in another DB (e.g., Mongo collections)** — **Integration**: verifies real effect
+- **Empty list serialization (`[]` vs `null`)** — **Integration**: contract verified with real DB
 
 For the expanded table with code examples, see [references/decision-table.md](references/decision-table.md).
 
