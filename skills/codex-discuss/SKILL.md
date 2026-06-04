@@ -1,6 +1,6 @@
 ---
 name: codex-discuss
-version: 1.2.0
+version: 1.2.1
 description: "Iterative non-code discussion between the local agent and Codex CLI on any open-ended topic: diet, fitness, writing, decisions, strategy, study plans, life choices, brainstorming. Orchestrates an automatic back-and-forth debate where both agents critique, propose alternatives, and iterate on the user's idea until reaching consensus. Codex CLI runs READ-ONLY, forms its own opinions, and normally does not navigate the filesystem unless the user provides file paths. Use when the user says discuss with codex, iterate with codex, consult codex, debate with codex, ask codex for a second opinion, get codex's take, or brainstorm with codex, including pasting or describing a plan, draft, idea, decision, or proposal and wanting a critical iterative review. Does NOT trigger on code review, plan-mode review of implementation plans, architecture discussions, or any technical software-engineering analysis; use codex-review for those."
 ---
 
@@ -141,7 +141,7 @@ thread_id="$(printf '%s\n' "$thread_line" | sed -nE 's/.*"thread_id"[[:space:]]*
 
 **Never** parse a *live* `codex ... --json | grep -m1 …` pipe: when the downstream command exits early, Codex can receive `SIGPIPE` and die before writing the reply/session. Always redirect to a file first, let Codex finish, then parse. Round 2+ does not need `--json` (the session ID is already known) — redirect its stdout to a throwaway log and read the reply from `-o`.
 
-**File naming (concurrency)**: at the start of the discussion, pick ONE random suffix `<rand>` and derive the temp paths from it — e.g. `${TMPDIR:-/tmp}/codex-msg-<rand>.txt` (reply), `…/codex-events-<rand>.jsonl` (round-1 stdout), `…/codex-stdout-<rand>.log` (round 2+ stdout), `…/codex-stderr-<rand>.log` (stderr). Reuse the **same literal reply path** for every round (each round overwrites it; read it right after the call). Hold the paths in working memory alongside the session ID: each `codex` call runs in a fresh shell, so shell variables do not carry over between rounds — substitute the fixed literal paths each time. A per-discussion unique suffix keeps concurrent discussions from clobbering each other's files (the same reason `--last` is banned — see *Parallel safety*). Delete the events/stdout/stderr temp files on success once the `thread_id` and a non-empty reply are confirmed; keep them on failure long enough to print bounded `tail`s.
+**File naming (concurrency)**: at the start of the discussion, create ONE private temp directory with `dir="$(mktemp -d "${TMPDIR:-/tmp}/codex-discuss.XXXXXXXX")" || exit` and put every temp file inside it — `reply.txt` (reply), `events.jsonl` (round-1 stdout), `stdout.log` (round 2+ stdout), `stderr.log` (stderr). The `|| exit` guard matters: these snippets don't run under `set -e`, so a failed `mktemp` (missing binary, unwritable `$TMPDIR`) would otherwise leave `$dir` empty and send every write — and the `rm -f` cleanup — to `/`. `mktemp -d` creates the directory atomically under a fresh, unguessable name (the randomness source is implementation-specific), retrying until it lands on one that does not exist — so two concurrent discussions can never collide, a far stronger guarantee than a self-chosen suffix (the same reason `--last` is banned — see *Parallel safety*). It also creates the dir `0700` (subject to umask), keeping the reply and logs out of reach of other users on a shared box (a stray `> /tmp/codex-…` file inherits umask and is usually world-readable). The template form — an absolute path ending in at least three `X`s, **no trailing extension** after them — is the portable spelling: it behaves identically under GNU coreutils (Linux, plus Git Bash / WSL on Windows) and BSD `mktemp` (macOS). Like the heredocs and `/dev/null` redirects elsewhere in this skill, it assumes a POSIX shell; on Windows that means running the agent under Git Bash or WSL, not cmd/PowerShell. Reuse the **same literal reply path** for every round (each round overwrites it; read it right after the call). Hold the directory path in working memory alongside the session ID: each `codex` call runs in a fresh shell, so shell variables do not carry over between rounds — re-assign `dir="<the WORKDIR printed in round 1>"` at the top of each round and derive the file paths from it. Delete the events/stdout/stderr files on success once the `thread_id` and a non-empty reply are confirmed (keep them on failure long enough to print bounded `tail`s); `rm -rf <WORKDIR>` when the discussion ends (re-assign the literal first — a fresh shell has no `$dir`).
 
 ## Inline Content vs Paths
 
@@ -463,46 +463,49 @@ Always use heredoc for multi-line prompts to Codex. **Use a random-suffix heredo
 Include ALL required flags. Use `--json` so the session ID lands in the event stream, and `-o <FILE>` to capture Codex's reply in a clean file (see *Reading Codex's Reply*). **Always redirect stdin with `< /dev/null`** — when invoked from any non-interactive shell (agent harnesses running shell tools, CI runners, background processes, scripts piping into other commands), stdin is non-TTY but still open, and Codex CLI hangs on "Reading additional input from stdin..." instead of using the prompt argument. Closing stdin forces Codex to rely solely on the positional prompt. **And redirect stdout/stderr to files** so the raw event stream never lands on the tool result (see *Reading Codex's Reply*):
 
 ```bash
-# Pick ONE random suffix for the whole discussion; derive all temp paths from it, e.g. 7f3a.
-# reply:  /tmp/codex-msg-7f3a.txt   (reused every round)
-# events: /tmp/codex-events-7f3a.jsonl   stderr: /tmp/codex-stderr-7f3a.log
-codex exec --json -o /tmp/codex-msg-7f3a.txt -s read-only --skip-git-repo-check "$(cat <<'PROMPT_a1b2'
+# Create ONE private temp dir for the whole discussion; mktemp -d picks the random name atomically.
+# Portable across GNU (Linux, Git Bash, WSL) and BSD (macOS) mktemp.
+dir="$(mktemp -d "${TMPDIR:-/tmp}/codex-discuss.XXXXXXXX")" || { echo "mktemp failed"; exit 1; }   # e.g. /tmp/codex-discuss.Ab3kL9Zq
+# reply: $dir/reply.txt (reused every round)   events: $dir/events.jsonl   stderr: $dir/stderr.log
+codex exec --json -o "$dir/reply.txt" -s read-only --skip-git-repo-check "$(cat <<'PROMPT_a1b2'
 Your multi-line prompt here...
 PROMPT_a1b2
-)" < /dev/null > /tmp/codex-events-7f3a.jsonl 2> /tmp/codex-stderr-7f3a.log
+)" < /dev/null > "$dir/events.jsonl" 2> "$dir/stderr.log"
 status=$?
 
 # Fail loudly with bounded diagnostics — the streams were redirected, so surface them only on error:
-[ "$status" -ne 0 ] && { echo "codex exec failed ($status)"; tail -c 12000 /tmp/codex-stderr-7f3a.log; tail -c 12000 /tmp/codex-events-7f3a.jsonl; exit "$status"; }
+[ "$status" -ne 0 ] && { echo "codex exec failed ($status)"; tail -c 12000 "$dir/stderr.log"; tail -c 12000 "$dir/events.jsonl"; exit "$status"; }
 
 # Parse the session ID from the COMPLETED events file (no jq; cannot SIGPIPE Codex):
-thread_line="$(grep -m1 -E '"type"[[:space:]]*:[[:space:]]*"thread\.started"' /tmp/codex-events-7f3a.jsonl || true)"
+thread_line="$(grep -m1 -E '"type"[[:space:]]*:[[:space:]]*"thread\.started"' "$dir/events.jsonl" || true)"
 thread_id="$(printf '%s\n' "$thread_line" | sed -nE 's/.*"thread_id"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p')"
-[ -n "$thread_id" ] || { echo "no thread_id found"; tail -c 12000 /tmp/codex-events-7f3a.jsonl; exit 1; }
-[ -s /tmp/codex-msg-7f3a.txt ] || { echo "empty reply file"; tail -c 12000 /tmp/codex-stderr-7f3a.log; exit 1; }
-echo "SESSION_ID=$thread_id"   # note this for resume; then read the reply from the -o file
-rm -f /tmp/codex-events-7f3a.jsonl /tmp/codex-stderr-7f3a.log   # cleanup on success
+[ -n "$thread_id" ] || { echo "no thread_id found"; tail -c 12000 "$dir/events.jsonl"; exit 1; }
+[ -s "$dir/reply.txt" ] || { echo "empty reply file"; tail -c 12000 "$dir/stderr.log"; exit 1; }
+echo "WORKDIR=$dir"            # note this for resume (shell vars don't persist between rounds)
+echo "SESSION_ID=$thread_id"   # note this too; then read the reply from the -o file
+rm -f "$dir/events.jsonl" "$dir/stderr.log"   # cleanup on success (keep reply.txt)
 
 # If the user overrode model and/or effort in their trigger message, add them before -s:
 #   -m <model> -c model_reasoning_effort="<effort>"
 # If web search is enabled (see *Web Search (opt-in)*), also add: -c tools.web_search=true  (round 1 only — inherited by resume)
 ```
 
-The Bash tool result is now just the `SESSION_ID=…` line (plus any error diagnostics). Note the session ID, then read Codex's reply from the `-o` file with the Read tool.
+The Bash tool result is now just the `WORKDIR=…` and `SESSION_ID=…` lines (plus any error diagnostics). Note both, then read Codex's reply from the `-o` file (`<WORKDIR>/reply.txt`, the path just printed) with the Read tool.
 
 ### Round 2+ — Session Continuation
 
 Use `codex exec resume` with the session ID noted in round 1. Session settings (model, sandbox, reasoning effort) are inherited, so `-m`/`-c`/`-s` are NOT re-passed. But `-o <FILE>` is a per-invocation output flag, not a session setting — re-pass it every round so the reply lands in the clean file (see *Reading Codex's Reply*); `--skip-git-repo-check` is also re-passed so resume works from any directory. Round 2+ does NOT need `--json` — the session ID is already known. Reuse the SAME literal reply-file path chosen in round 1, and **redirect stdout/stderr to files** (resume prints a noisy human TUI to stdout that would otherwise land on the tool result):
 
 ```bash
-codex exec resume --skip-git-repo-check -o /tmp/codex-msg-7f3a.txt <SESSION_ID> "$(cat <<'PROMPT_c3d4'
+dir="<WORKDIR>"   # paste the value printed as WORKDIR= in round 1 — e.g. /tmp/codex-discuss.Ab3kL9Zq (macOS TMPDIR differs; not this literal). Shell vars don't persist between rounds.
+codex exec resume --skip-git-repo-check -o "$dir/reply.txt" <SESSION_ID> "$(cat <<'PROMPT_c3d4'
 Your follow-up prompt here...
 PROMPT_c3d4
-)" < /dev/null > /tmp/codex-stdout-7f3a.log 2> /tmp/codex-stderr-7f3a.log
+)" < /dev/null > "$dir/stdout.log" 2> "$dir/stderr.log"
 status=$?
-[ "$status" -ne 0 ] && { echo "codex resume failed ($status)"; tail -c 12000 /tmp/codex-stderr-7f3a.log; tail -c 12000 /tmp/codex-stdout-7f3a.log; exit "$status"; }
-[ -s /tmp/codex-msg-7f3a.txt ] || { echo "empty reply file"; tail -c 12000 /tmp/codex-stderr-7f3a.log; exit 1; }
-rm -f /tmp/codex-stdout-7f3a.log /tmp/codex-stderr-7f3a.log   # cleanup on success
+[ "$status" -ne 0 ] && { echo "codex resume failed ($status)"; tail -c 12000 "$dir/stderr.log"; tail -c 12000 "$dir/stdout.log"; exit "$status"; }
+[ -s "$dir/reply.txt" ] || { echo "empty reply file"; tail -c 12000 "$dir/stderr.log"; exit 1; }
+rm -f "$dir/stdout.log" "$dir/stderr.log"   # cleanup on success
 ```
 
 Read Codex's reply from the `-o` file — never from the redirected TUI log. The `< /dev/null` redirection is required on every `codex exec` and `codex exec resume` call for the same reason explained in Round 1 — without it, the process hangs waiting for stdin in non-interactive contexts. (The one exception is the prompt-file fallback `- < "$prompt_file"`, where stdin intentionally carries the prompt.)
