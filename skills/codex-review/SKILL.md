@@ -1,6 +1,6 @@
 ---
 name: codex-review
-version: 1.2.2
+version: 1.3.0
 description: "Iterative code review and planning discussion between the local agent and Codex CLI. Orchestrates an automatic back-and-forth debate where both agents discuss findings, architecture decisions, or implementation plans until reaching consensus. Codex CLI runs READ-ONLY and never modifies files; model and reasoning effort come from the user's local Codex config. Supports plan mode: when the local agent has a plan ready, Codex evaluates and iterates on it before implementation, producing an updated consensus plan. Use when the user asks to review with codex, analyze with codex, discuss code with codex, iterate with codex, consult codex, ask codex, review the plan with codex, validate plan with codex, or any Codex CLI request for code review, architecture review, plan review, or implementation strategy. Does NOT trigger on non-code topics like diet, fitness, writing, life decisions, or general strategy; use codex-discuss for those."
 ---
 
@@ -429,6 +429,7 @@ Include ALL required flags. Use `--json` so the session ID lands in the event st
 # Create ONE private temp dir for the whole review; mktemp -d picks the random name atomically.
 # Portable across GNU (Linux, Git Bash, WSL) and BSD (macOS) mktemp.
 dir="$(mktemp -d "${TMPDIR:-/tmp}/codex-review.XXXXXXXX")" || { echo "mktemp failed"; exit 1; }   # e.g. /tmp/codex-review.Ab3kL9Zq
+echo "WORKDIR=$dir"   # echo BEFORE codex runs — locates the files even if the run dies midway (see Execution Mode)
 # reply: $dir/reply.txt (reused every round)   events: $dir/events.jsonl   stderr: $dir/stderr.log
 codex exec --json -o "$dir/reply.txt" -s read-only --skip-git-repo-check "$(cat <<'PROMPT_a1b2'
 Your multi-line prompt here...
@@ -473,13 +474,18 @@ rm -f "$dir/stdout.log" "$dir/stderr.log"   # cleanup on success
 
 Read Codex's reply from the `-o` file — never from the redirected TUI log. The `< /dev/null` redirection is required on every `codex exec` and `codex exec resume` call for the same reason explained in Round 1 — without it, the process hangs waiting for stdin in non-interactive contexts. (The one exception is the prompt-file fallback `- < "$prompt_file"`, where stdin intentionally carries the prompt.)
 
-### Timeouts
+### Execution Mode — Background by Default
 
-Set a generous timeout (up to 10 minutes) for Codex calls since high reasoning efforts can take time:
+High reasoning efforts routinely run longer than foreground shell limits allow — e.g. Claude Code caps a foreground Bash call at 10 minutes and then kills the process (SIGTERM, exit 143), losing the entire round. Exhaustive round-1 reviews over multi-repo scopes are the most affected, but any round can exceed the cap.
 
-```bash
-# In Bash tool, use timeout: 600000
-```
+**Run EVERY `codex exec` / `codex exec resume` call as a background task** when the harness supports it (e.g. the Bash tool's `run_in_background: true` in Claude Code), instead of a foreground call with a timeout:
+
+- The command template stays exactly the same (heredoc, flags, redirections) — only the execution mode changes.
+- `echo "WORKDIR=$dir"` immediately after `mktemp`, BEFORE launching codex — the background task's captured output must reveal the temp dir even if the run dies before the success echoes at the end.
+- Do NOT poll the output or reply files in a loop, and do NOT schedule wake-ups to check on it — wait for the harness's completion notification, then read the task output (the `WORKDIR=`/`SESSION_ID=` lines) and the `-o` reply file.
+- While a round is running, never fabricate or anticipate Codex's reply; if the user asks, say the round is still in progress.
+
+**Fallback (no background support)**: run foreground with the maximum timeout the harness allows (in Claude Code's Bash tool: `timeout: 600000`). If the call is killed by the timeout, re-launch it in background rather than shrinking the review scope to fit the limit — the session is resumable, but a killed round 1 has no session ID, so it must be restarted.
 
 ### Required Flags Checklist (Round 1)
 
