@@ -1,6 +1,6 @@
 ---
 name: explain-pr
-version: 1.1.0
+version: 1.2.0
 description: "Explain a GitHub Pull Request (PR) or GitLab Merge Request (MR) to the user in plain, easy-to-understand language: WHAT was done, WHY/what for, and HOW — with the relevant code snippets embedded. Invoke this proactively and automatically right after creating or finishing a PR/MR (e.g. after running `gh pr create`, `glab mr create`, or pushing a branch and opening a PR/MR), even if the user did not explicitly ask for an explanation. Also use whenever the user asks to explain, summarize, walk through, recap, or 'tell me what you did' about a PR/MR or the changes in a branch. Works with any coding agent and relies on the local git diff, so it does NOT require gh/glab to function. Do NOT use for unrelated code reviews, bug hunting, or writing the PR/MR description itself — this skill only explains finished work back to the user."
 ---
 
@@ -107,6 +107,10 @@ Keep all three sections even for a tiny PR (a one-line fix, a config tweak) — 
 - **Anchor everything in the real diff.** The *what* and *how* must reflect code that's actually in the diff — real file paths, real lines. This is the guardrail against plausible-sounding fiction. The *why* can come from context, but flag it when it's missing rather than filling the gap with a guess.
 - **Plain over precise-but-dense.** Favor language a teammate could skim and get. Define a term if the change introduces an unusual one, but don't lecture. The user wants it "easy and simple to understand" — honor that.
 - **Explain, don't review.** Resist the urge to critique or suggest. If you genuinely spot something that looks wrong, you can flag it in one line at the end, but the body stays explanatory.
+
+## After the explanation: chain the comprehension quiz
+
+If the `mr-quiz` skill is available in this environment, invoke it (Skill tool) right after delivering the explanation, without waiting to be asked — the explanation is the study material; the quiz is what verifies it landed. Exceptions: the user declines or asks to skip, or the change is pure noise (lockfile bumps, formatting), where mr-quiz itself would skip. If `mr-quiz` is not available, end after the explanation as before.
 
 ## Example (shape, not content)
 
