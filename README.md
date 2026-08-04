@@ -18,7 +18,7 @@ Skills are markdown-only instructions that shape how your coding agent writes, r
 | **[test-namer](skills/test-namer)** | Write expressive, behavior-focused tests following Vladimir Khorikov's testing principles. Plain English names, test behavior not implementation. |
 | **[dual-testing](skills/dual-testing)** | Go dual testing strategy: integration tests (testcontainers) verify full-chain wiring for happy paths, unit tests (testify/mock) verify error handling logic. Avoids duplicating happy paths across layers. |
 | **[explain-pr](skills/explain-pr)** | Explain a freshly opened Pull Request or Merge Request back to you in plain language — what changed, why, and how — with the relevant code snippets inline. Fixed, predictable structure; reads the local git diff, so no `gh`/`glab` required. |
-| **[mr-quiz](skills/mr-quiz)** | Socratic quiz right after a PR/MR ships (chains automatically from explain-pr): 3–5 defense questions about the change — one at a time, honestly graded with `file:line` evidence. Counters comprehension debt from delegating code to agents. |
+| **[pr-quiz](skills/pr-quiz)** | Socratic quiz right after a PR/MR ships (chains automatically from explain-pr): 3–5 defense questions about the change — one at a time, honestly graded with `file:line` evidence. Counters comprehension debt from delegating code to agents. |
 | **[study-session](skills/study-session)** | Guided ~1h comprehension session over real code: the user reads and explains, the agent probes and corrects. Tracks which subsystems you can defend in a per-project comprehension map. |
 | **[como-si-fuera-de-boca](skills/como-si-fuera-de-boca)** | Explain anything — code, errors, concepts, or non-technical topics — in the simplest plain-language way (ELI5), with a natural Río de la Plata (Argentine) voice that puts clarity before humor. On-request only: triggers on "explicámelo como si fuera de Boca", "bajámelo un cambio", "en criollo", "ELI5", "explain like I'm 5", etc. |
 
@@ -58,4 +58,6 @@ Once installed, skills activate automatically based on context. Some examples:
 - **test-namer** — Activates whenever tests are written, created, or reviewed
 - **dual-testing** — Ask "where should this test go?" or activates when designing test strategy for a Go handler/feature
 - **explain-pr** — Ask to "explicame el PR/MR", "walk me through this PR", or run `/explain-pr` right after opening a PR/MR. Optional: to fire it automatically after every PR/MR, add a line like "when you create a PR/MR, invoke explain-pr" to your `AGENTS.md`/`CLAUDE.md`.
+- **pr-quiz** — Chains automatically after explain-pr, or ask "quiz me on this change" / "tomame el quiz" after shipping a PR/MR.
+- **study-session** — Ask for a "study session" / "sesión de estudio" on a repo or subsystem you want to truly understand.
 - **como-si-fuera-de-boca** — Ask to "explicámelo como si fuera de Boca", "bajámelo un cambio", "explicalo simple", "en criollo", "ELI5", or "explain like I'm 5" when you want something dumbed down on request.

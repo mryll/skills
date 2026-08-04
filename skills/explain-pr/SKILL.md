@@ -110,7 +110,7 @@ Keep all three sections even for a tiny PR (a one-line fix, a config tweak) — 
 
 ## After the explanation: chain the comprehension quiz
 
-If the `mr-quiz` skill is available in this environment, invoke it (Skill tool) right after delivering the explanation, without waiting to be asked — the explanation is the study material; the quiz is what verifies it landed. Exceptions: the user declines or asks to skip, or the change is pure noise (lockfile bumps, formatting), where mr-quiz itself would skip. If `mr-quiz` is not available, end after the explanation as before.
+If the `pr-quiz` skill is available in this environment, invoke it (Skill tool) right after delivering the explanation, without waiting to be asked — the explanation is the study material; the quiz is what verifies it landed. Exceptions: the user declines or asks to skip, or the change is pure noise (lockfile bumps, formatting), where pr-quiz itself would skip. If `pr-quiz` is not available, end after the explanation as before.
 
 ## Example (shape, not content)
 

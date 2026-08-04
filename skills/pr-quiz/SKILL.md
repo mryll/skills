@@ -1,7 +1,7 @@
 ---
-name: mr-quiz
+name: pr-quiz
 version: 1.1.0
-description: "Use when a PR/MR explanation was just delivered (e.g. right after the explain-pr skill finishes) and the change was substantially agent-written, or whenever the user asks to be quizzed on a change: 'quiz me on this change', 'tomame el quiz', 'quiz del MR', 'tomame la lección', '/mr-quiz'. Counters comprehension debt: verifies the user can defend code they delegated to a coding agent. Do NOT use for code review, bug hunting, or explaining changes (that's explain-pr) — this skill asks questions and grades answers."
+description: "Use when a PR/MR explanation was just delivered (e.g. right after the explain-pr skill finishes) and the change was substantially agent-written, or whenever the user asks to be quizzed on a change: 'quiz me on this change', 'tomame el quiz', 'quiz del MR', 'tomame la lección', '/pr-quiz'. Counters comprehension debt: verifies the user can defend code they delegated to a coding agent. Do NOT use for code review, bug hunting, or explaining changes (that's explain-pr) — this skill asks questions and grades answers."
 ---
 
 # MR Quiz — can you defend this change?
