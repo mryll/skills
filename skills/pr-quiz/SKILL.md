@@ -1,63 +1,55 @@
 ---
 name: pr-quiz
-version: 1.1.0
-description: "Use when a PR/MR explanation was just delivered (e.g. right after the explain-pr skill finishes) and the change was substantially agent-written, or whenever the user asks to be quizzed on a change: 'quiz me on this change', 'tomame el quiz', 'quiz del MR', 'tomame la lección', '/pr-quiz'. Counters comprehension debt: verifies the user can defend code they delegated to a coding agent. Do NOT use for code review, bug hunting, or explaining changes (that's explain-pr) — this skill asks questions and grades answers."
+version: 2.0.0
+description: "Use when a PR/MR explanation was just delivered (e.g. right after the explain-pr skill finishes) and the change was substantially agent-written, or whenever the user asks to be quizzed on a change: 'quiz me on this change', 'tomame el quiz', 'quiz del MR', 'tomame la lección', '/pr-quiz'. Counters comprehension debt: a formative, change-specific check that the user can defend code they delegated to a coding agent. Do NOT use for code review, bug hunting, or explaining changes (that's explain-pr) — this skill asks questions and grades answers."
 ---
 
 # MR Quiz — can you defend this change?
 
-The user just shipped a change that an agent largely wrote. The explanation (`explain-pr`) told them what/why/how; this skill verifies the understanding actually landed, by making **the user** articulate it. Evidence on AI-assisted coding shows delegation without active recall hollows out the mental model — answering questions is the active recall.
+The user just shipped a change that an agent largely wrote. The explanation (`explain-pr`) told them what/why/how; this quiz makes **the user** articulate it. It applies active retrieval with code-grounded feedback — mechanisms with support in adjacent settings (e.g. Anthropic's skill-formation RCT); whether it works here is measured by the user's own delayed performance in study sessions, not assumed.
+
+**This quiz is formative and change-specific.** It happens minutes after an explanation, so it measures primed recall. It can catch false confidence and open gaps; it can NEVER certify a subsystem, advance a spacing interval, or close a durable gap (closing requires cold or delayed evidence from a study session).
 
 **The user answers. You grade. Never the other way around.**
 
 ## The quiz contract
 
-1. **Ground yourself in the real diff.** Same range as explain-pr (`git diff <base>...HEAD`). You usually just explained it — reuse that knowledge.
-2. **Pick 3–5 questions** (3 for small changes, 5 for large ones) from the question types below, tailored to this specific change. Skip the quiz entirely only for pure-noise changes (lockfile bumps, formatting) — say so in one line.
-3. **Ask ONE question per message.** Send question 1, end your turn, wait for the answer. Never list all questions upfront.
-4. **Grade each answer before the next question**, with a three-level verdict and code evidence:
+1. **Ground yourself in the real diff.** Same range as explain-pr (`git diff <base>...HEAD`). Note `repo@sha` and the paths touched.
+2. **Prepare a hidden answer rubric before asking**: expected answer per question, acceptable alternatives, and the evidence (`file:line`, test) for each. Undocumented design intent is "intent unknown", never a wrong user answer.
+3. **Scale by risk, not size.** Three mandatory question roles, one question each:
+   - **Behavior/contract** — trace the change from input to output.
+   - **Invariant/failure** — the load-bearing property and how it can break.
+   - **Diagnosis/blast radius** — the production signal and the first investigation step; who consumes this.
+   Add a fourth **design-alternative** question only when the change contains a consequential choice. A three-line concurrency fix may deserve deeper questions than a large mechanical migration. Skip the quiz entirely only for pure-noise changes (lockfile bumps, formatting, generated code with no behavioral relevance) — say so in one line. A broad or high-risk MR → recommend escalating to `study-session` instead of stretching the quiz.
+4. **Ask ONE question per message.** Send question 1, end your turn, wait. Never list all questions upfront.
+5. **Grade each answer before the next question**, three-level verdict with code evidence:
    - ✅ **solid** — correct and complete for the question's scope.
-   - 🟡 **partial** — right direction, missing a piece. Name the missing piece, show the `file:line` that proves it.
-   - ❌ **weak** — wrong or "I don't know". Give the real answer briefly, anchored in `file:line`.
-   "I don't know" is a legitimate answer — grade it ❌ without ceremony and teach the answer. Guessing dressed as knowledge is worse.
-5. **Close with a scorecard**: one line per question (verdict + topic), then the list of weak topics (🟡/❌).
-6. **Update the tracking page** if the user keeps one (see below). Record only what the user demonstrated — verdicts and weak topics, never theory they didn't articulate.
-
-## Question types
-
-Ask what a colleague, reviewer, or 3 AM incident would ask — never trivia (names of functions, line counts).
-
-| Type | Shape |
-|---|---|
-| Design-why | "Why was this solved with X and not Y?" |
-| Failure mode | "What happens if <dependency/input> fails or arrives malformed?" |
-| Blast radius | "What other part of the system does this touch? Who consumes it?" |
-| Invariant | "What guarantees that <property> still holds?" |
-| Operational | "How would you find out in production that this broke?" |
+   - 🟡 **partial** — right direction, missing a piece. Name it, show the `file:line` that proves it.
+   - ❌ **weak** — wrong or "I don't know". Give the real answer briefly, anchored in `file:line`. "I don't know" is a legitimate answer — grade it ❌ without ceremony and teach. Guessing dressed as knowledge is worse.
+   An answer corrected mid-quiz may be noted *repaired-immediate* — it still grades on the initial attempt.
+6. **Close with a scorecard**: one line per question (verdict + topic), then the 🟡/❌ topics.
+7. **Update the comprehension map** (see below): append the event, add dated gaps. Never raise an outcome, never touch spacing dates.
 
 ## Grading honestly
 
 The entire value of the quiz is calibration. A 🟡 graded as ✅ is a lie that costs the user at incident time. State plainly what was missing; quote the code that proves it. No "exactly!" unless it actually was.
 
-## Tracking page
+## Comprehension map update
 
-If the user keeps a per-project comprehension map (a markdown page tracking which subsystems they can defend), update the affected subsystem's row: status only if demonstrated, last-defended = today, weak topics += the scorecard's 🟡/❌ items. To find it: use the location the user's instructions or memory name; otherwise ask once. If they don't have one, offer to create it:
+If the user keeps a per-project comprehension map (see `study-session` for discovery; schema lives in the user's knowledge wiki), after the scorecard:
 
-```markdown
-# <Project> — comprehension map
-| Subsystem | Repo/path | Status | Last defended | Weak topics |
-|---|---|---|---|---|
-| ... | ... | not-assessed | — | — |
-```
+- Append an event (`Mode: mr-quiz`) with `repo@sha`, scope (paths/flow), verdicts on initial answers, and dated gaps opened.
+- If the MR touched a subsystem with prior evidence, mark that row's validity `code-changed` (delta check due) — the quiz revealed drift; it does not re-certify.
+- Never: raise an outcome, refresh approval dates, advance next-due, or resolve a durable gap. Record only what the user demonstrated.
 
-Statuses: **defensible** (explained design and failure modes unaided) / **shaky** (needed heavy correction) / **not-assessed**. The golden rule of the page: it only records what the user demonstrated in a quiz or study session — never agent-written theory.
+No map → offer to create one via the study-session discovery flow, or skip tracking in one line.
 
 ## Red flags — stop and fix
 
 - All questions in one message.
 - Answering your own question before the user tried.
 - ✅ verdict for an answer you had to complete.
-- Trivia questions.
-- Recording understanding the user didn't demonstrate.
+- Trivia questions (function names, line counts) instead of what a reviewer or a 3 AM incident would ask.
+- Recording understanding the user didn't demonstrate, or upgrading map state from an immediate quiz.
 
 Match the conversation's language (quiz in Spanish if the user speaks Spanish).
