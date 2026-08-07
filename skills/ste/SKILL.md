@@ -1,6 +1,6 @@
 ---
 name: ste
-version: 1.2.0
+version: 1.3.0
 description: "Use when the user asks to write, rewrite, explain, translate, or check ANY content in Simplified Technical English — mid-conversation re-explanations included — on any mention of STE, STE100, ASD-STE100, Simplified Technical English, 'inglés técnico simplificado', 'inglés controlado', 'controlled English', 'lenguaje controlado', 'en STE', 'explicame esto en STE', 'volvé a explicarlo en STE', 'explain this in STE', 'reescribí esto en STE', 'redactá este procedimiento / warning / manual en STE', or a request to check procedures, warnings, manuals, or technical descriptions for STE compliance. Do NOT use for generic simplification or ELI5-style requests that do not mention STE or a controlled language."
 ---
 
@@ -24,23 +24,36 @@ wants again in STE. The workflow is the same; for conversational
 re-explanations the cheap levels (Marked, Clean) are usually the right
 default to offer first.
 
-## Step 1 — Choose the compliance level (before anything else)
+## Step 1 — Choose the compliance level and output language (before anything else)
 
-If the user's request already names a level, use it and do not ask. A request
-that semantically asks for compliance ("does this comply with ASD-STE100?",
-"quiero STE estricto") selects Verified automatically. Otherwise ask the user
-(AskUserQuestion where the harness has it, a plain question otherwise):
+Ask both in ONE interaction (AskUserQuestion where the harness has it, a
+plain question otherwise) — but ask only what the request leaves open:
+
+- **Level**: if the request names one, use it silently. A request that
+  semantically asks for compliance ("does this comply with ASD-STE100?",
+  "quiero STE estricto") selects Verified automatically.
+- **Output language**: if the request names a language, asks for a
+  translation, or was written in a non-English language (which implies
+  English + that language), use that silently. The choice is "English only"
+  or "English + <language>" — never translation-only: the STE English IS the
+  deliverable, and the target language never changes Step 3 (drafting is
+  always English; translation is always the second pass).
+
+The levels:
 
 - **Verified STE** — full dictionary compliance. Costs the most tokens:
   replacements, TN/TV judgment, fix passes, and the manual checklist.
 - **Marked draft** — STE-style draft with every unresolved word tagged so the
   reader sees what a verified pass would resolve. Not verified.
-- **Clean draft** — STE-style draft, no marks. Not verified.
+- **Clean draft** — STE-style draft, no marks. Annotations still validated
+  and stripped by the checker's `--clean` mode. Not verified.
+- **Raw draft** — STE style from model training only. No annotations, no
+  dictionary, no checker, no marks, zero tool calls. The cheapest level.
 
-Clean skips Step 2 entirely (the checker's `--clean` mode reads no
-dictionary). If the dictionary cannot be downloaded, only Clean is possible:
-say so, deliver the clean draft, and its note must say "not verified
-(dictionary unavailable)" with no flagged-word count.
+Clean skips Step 2 (the `--clean` mode reads no dictionary). Raw skips
+Steps 2 through 5 entirely — write and deliver. If the dictionary cannot be
+downloaded, only Clean or Raw are possible: say so, and the note must say
+"not verified (dictionary unavailable)" with no flagged-word count.
 
 ## Step 2 — Get the official dictionary (cached; Verified and Marked only)
 
@@ -68,8 +81,8 @@ imperative; descriptive — max 25 words, no imperative, max 6 sentences per
 paragraph; safety instruction — WARNING (injury) or CAUTION (damage), then
 command or condition, then consequence.
 
-While drafting, annotate every word you use as a technical noun or technical
-verb (rules 1.5 / 1.12) the moment you write it:
+While drafting (all levels except Raw), annotate every word you use as a
+technical noun or technical verb (rules 1.5 / 1.12) the moment you write it:
 
 - Single word: `webhook~tn` or with its category `webhook~tn19`
 - Technical verb: `reboot~tv2`
@@ -139,9 +152,10 @@ Verified deliverables end with exactly these three items:
 
 Marked and Clean deliverables end with one line instead: the level and the
 checker's flagged count (e.g., "Draft level: marked — 7 words flagged by
-ste-check; not dictionary-verified STE"). A marked or clean draft must never
-present itself as STE-compliant, and "all vocabulary is approved" without a
-checker run behind it is never written.
+ste-check; not dictionary-verified STE"). Raw deliverables end with: "Draft
+level: raw — model training only; nothing was checked." A marked, clean, or
+raw draft must never present itself as STE-compliant, and "all vocabulary is
+approved" without a checker run behind it is never written.
 
 ## Economy mode (optional)
 
@@ -161,7 +175,7 @@ the compliance note. Never delegate the level choice (Step 1).
 - Trusting an extracted alternative blindly when it does not fit the
   sentence — the columns are parsed mechanically; `--entry` shows the full
   entry with meanings and examples.
-- Treating a Marked or Clean draft as STE. Only Verified — automated checks
+- Treating a Marked, Clean, or Raw draft as STE. Only Verified — automated checks
   clean AND manual checklist completed — may claim compliance.
 - Keeping a 4+ word noun cluster. Rule 2.2: write it in full once, then
   hyphenate the unit ("pressure-relief valve") or give a shorter form.
