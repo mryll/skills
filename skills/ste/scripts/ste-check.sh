@@ -4,7 +4,8 @@
 # Usage:
 #   ste-check.sh [--annotated] --verified <draft>   full report + rule checklist
 #   ste-check.sh [--annotated] --marked   <draft>   report + <draft>.marked.md
-#   ste-check.sh [--annotated] --clean    <draft>   strip annotations, emit text
+#   ste-check.sh --clean <draft>                    strip annotations, emit text
+#                                                   (--clean implies --annotated)
 #   ste-check.sh --entry <word>                     print the dictionary entries
 #
 # Exit codes: 0 = automated checks clean, 1 = compliance findings remain,
@@ -30,7 +31,7 @@ while [ $# -gt 0 ]; do
     --verified|--marked|--clean) [ -n "$MODE" ] && { echo "one mode only" >&2; exit 2; }; MODE="${1#--}" ;;
     --entry) [ -n "$MODE" ] && { echo "one mode only" >&2; exit 2; }; MODE="entry"; shift; ENTRYWORD="$1" ;;
     --) shift; TARGET="$1" ;;
-    -h|--help) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) awk 'NR > 1 && !/^#/ { exit } NR > 1 { sub(/^# ?/, ""); print }' "$0"; exit 0 ;;
     -*) echo "unknown option: $1 (try --help)" >&2; exit 2 ;;
     *) [ -n "$TARGET" ] && { echo "one input file only" >&2; exit 2; }; TARGET="$1" ;;
   esac
