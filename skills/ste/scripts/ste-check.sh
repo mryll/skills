@@ -30,12 +30,14 @@ while [ $# -gt 0 ]; do
     --verified|--marked|--clean) [ -n "$MODE" ] && { echo "one mode only" >&2; exit 2; }; MODE="${1#--}" ;;
     --entry) [ -n "$MODE" ] && { echo "one mode only" >&2; exit 2; }; MODE="entry"; shift; ENTRYWORD="$1" ;;
     --) shift; TARGET="$1" ;;
-    -*) echo "unknown option: $1" >&2; exit 2 ;;
+    -h|--help) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -*) echo "unknown option: $1 (try --help)" >&2; exit 2 ;;
     *) [ -n "$TARGET" ] && { echo "one input file only" >&2; exit 2; }; TARGET="$1" ;;
   esac
   shift
 done
 [ -n "$MODE" ] || { echo "usage: ste-check.sh [--annotated] --verified|--marked|--clean <draft> | --entry <word>" >&2; exit 2; }
+[ "$MODE" = "clean" ] && ANNOT=1   # --clean exists to validate/strip annotations; bare --clean is a no-op otherwise
 
 if [ "$MODE" = "entry" ]; then
   [ -n "$ENTRYWORD" ] || { echo "--entry needs a word" >&2; exit 2; }

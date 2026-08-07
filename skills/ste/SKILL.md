@@ -1,6 +1,6 @@
 ---
 name: ste
-version: 1.3.0
+version: 1.3.1
 description: "Use when the user asks to write, rewrite, explain, translate, or check ANY content in Simplified Technical English — mid-conversation re-explanations included — on any mention of STE, STE100, ASD-STE100, Simplified Technical English, 'inglés técnico simplificado', 'inglés controlado', 'controlled English', 'lenguaje controlado', 'en STE', 'explicame esto en STE', 'volvé a explicarlo en STE', 'explain this in STE', 'reescribí esto en STE', 'redactá este procedimiento / warning / manual en STE', or a request to check procedures, warnings, manuals, or technical descriptions for STE compliance. Do NOT use for generic simplification or ELI5-style requests that do not mention STE or a controlled language."
 ---
 
@@ -98,9 +98,14 @@ label is forbidden while any declared word lacks a category.
 ## Step 4 — Run the checker (one call per pass)
 
 ```bash
-scripts/ste-check.sh --annotated --verified draft.md   # or --marked / --clean
-scripts/ste-check.sh --entry <word>                    # full dictionary entry lookup
+scripts/ste-check.sh --annotated --verified draft.md
+scripts/ste-check.sh --annotated --marked draft.md
+scripts/ste-check.sh --clean draft.md      # implies --annotated
+scripts/ste-check.sh --entry <word>        # full dictionary entry lookup
 ```
+
+Always pass `--annotated` for drafts you wrote (your drafts carry TN/TV
+annotations); never pass it when checking third-party text.
 
 Exit codes: 0 automated checks clean, 1 findings remain, 2 invocation/cache
 failure. One run classifies every word (NOT APPROVED with extracted
