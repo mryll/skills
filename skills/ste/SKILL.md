@@ -1,126 +1,171 @@
 ---
 name: ste
-version: 1.1.0
-description: "Use when the user asks to write, rewrite, translate, or check text in Simplified Technical English — any mention of STE, STE100, ASD-STE100, Simplified Technical English, 'inglés técnico simplificado', 'inglés controlado', 'controlled English', 'lenguaje controlado', 'en STE', 'reescribí esto en STE', 'redactá este procedimiento / warning / manual en STE', or a request to check procedures, warnings, manuals, or technical descriptions for STE compliance. Do NOT use for generic simplification or ELI5-style requests that do not mention STE or a controlled language."
+version: 1.2.0
+description: "Use when the user asks to write, rewrite, explain, translate, or check ANY content in Simplified Technical English — mid-conversation re-explanations included — on any mention of STE, STE100, ASD-STE100, Simplified Technical English, 'inglés técnico simplificado', 'inglés controlado', 'controlled English', 'lenguaje controlado', 'en STE', 'explicame esto en STE', 'volvé a explicarlo en STE', 'explain this in STE', 'reescribí esto en STE', 'redactá este procedimiento / warning / manual en STE', or a request to check procedures, warnings, manuals, or technical descriptions for STE compliance. Do NOT use for generic simplification or ELI5-style requests that do not mention STE or a controlled language."
 ---
 
 # STE — Simplified Technical English (ASD-STE100)
 
-STE is a controlled language: ~53 writing rules plus a dictionary of 875 approved
-words where each word has exactly one meaning and one part of speech. Compliance
-with the dictionary CANNOT come from memory — words you would swear are approved
-("qualified", "ensure", "perform") are not. Every claim of compliance in your
-output must come from a lookup, not from intuition.
+STE is a controlled language: ~53 writing rules plus a dictionary of 875
+approved words where each word has exactly one meaning per part of speech.
+Dictionary compliance CANNOT come from memory — words you would swear are
+approved ("qualified", "ensure", "should") are not. Only the Verified level
+below claims compliance, and every claim in it comes from the checker script,
+not from intuition.
 
-STE is defined for English only. You always write the STE text in English first,
-verified against the official dictionary. If the user asked in another language
-or asks for a translation, you translate FROM the verified STE English as a
-second pass — never draft directly in the other language.
+STE is defined for English only. The STE text is always written in English
+first. If the user asked in another language or asks for a translation, you
+translate FROM the STE English as a second pass — never draft directly in the
+other language.
 
-## When to use
+The source can be anything: a document, a merge-request description, a
+procedure — or something just discussed in the conversation that the user
+wants again in STE. The workflow is the same; for conversational
+re-explanations the cheap levels (Marked, Clean) are usually the right
+default to offer first.
 
-- "Reescribí esto en STE" / "rewrite this in Simplified Technical English"
-- "Explicame X en STE" — draft the explanation in STE English, then translate if asked
-- "Redactá este warning / procedimiento en STE"
-- "¿Esto cumple ASD-STE100?" — compliance check of existing text
+## Step 1 — Choose the compliance level (before anything else)
 
-Not for generic "make it simpler" requests that never mention STE or controlled
-language.
+If the user's request already names a level, use it and do not ask. A request
+that semantically asks for compliance ("does this comply with ASD-STE100?",
+"quiero STE estricto") selects Verified automatically. Otherwise ask the user
+(AskUserQuestion where the harness has it, a plain question otherwise):
 
-## Step 0 — Get the official dictionary (cached)
+- **Verified STE** — full dictionary compliance. Costs the most tokens:
+  replacements, TN/TV judgment, fix passes, and the manual checklist.
+- **Marked draft** — STE-style draft with every unresolved word tagged so the
+  reader sees what a verified pass would resolve. Not verified.
+- **Clean draft** — STE-style draft, no marks. Not verified.
+
+Clean skips Step 2 entirely (the checker's `--clean` mode reads no
+dictionary). If the dictionary cannot be downloaded, only Clean is possible:
+say so, deliver the clean draft, and its note must say "not verified
+(dictionary unavailable)" with no flagged-word count.
+
+## Step 2 — Get the official dictionary (cached; Verified and Marked only)
 
 ```bash
 C="${XDG_CACHE_HOME:-$HOME/.cache}/asd-ste100"
 if [ ! -s "$C/ste100.txt" ]; then
   mkdir -p "$C"
-  curl -sL -o "$C/spec.pdf" "https://www.asd-ste100.org/assets/files/ASD-STE100_ISSUE9.pdf"
-  pdftotext "$C/spec.pdf" "$C/ste100.txt"
+  curl -sL --fail -o "$C/spec.pdf" "https://www.asd-ste100.org/assets/files/ASD-STE100_ISSUE9.pdf"
+  pdftotext -layout "$C/spec.pdf" "$C/ste100.txt"
 fi
 ```
 
-`pdftotext` comes with poppler (`poppler-utils` on Debian). If the download or
-extraction fails, continue with the workflow and mark every dictionary claim as
-unverified in the compliance note (see below).
+`-layout` is required — the checker parses the dictionary columns and
+validates the cache structurally (Issue 9 marker, dictionary boundary,
+exactly 875 approved entries). A wrong cache is a controlled error with
+regeneration instructions, never silent misclassification. `pdftotext` comes
+with poppler; the checker requires `gawk`.
 
-## Workflow
+## Step 3 — Draft in STE English, annotating TN/TV as you write
 
-1. Read `references/rules.md` in this skill directory — the distilled Issue 9
-   rules. Draft nothing before reading it.
-2. Draft the text in STE English, applying the rules for the text type
-   (procedural: ≤20 words/sentence, imperative; descriptive: ≤25 words, no
-   imperative; safety instruction: WARNING/CAUTION → command or condition →
-   consequence).
-3. Verify the vocabulary. Write the draft to a file and run the checker script
-   (in this skill directory) — one deterministic pass over every word:
+Draft from what you already know of the STE rules — do not read
+`references/rules.md` first; read it only when you are not sure about a
+specific rule. Shapes by text type: procedural — max 20 words per sentence,
+imperative; descriptive — max 25 words, no imperative, max 6 sentences per
+paragraph; safety instruction — WARNING (injury) or CAUTION (damage), then
+command or condition, then consequence.
 
-   ```bash
-   scripts/ste-check.sh draft.txt
-   ```
+While drafting, annotate every word you use as a technical noun or technical
+verb (rules 1.5 / 1.12) the moment you write it:
 
-   Work through its output:
-   - NOT APPROVED (lowercase dictionary entry) → look up the approved
-     alternatives with `grep -A6 -iE "^word \(" "$C/ste100.txt"` and use one,
-     or justify the word as part of a technical noun.
-   - NO ENTRY → usable only as a technical noun (rule 1.5 categories) or
-     technical verb (rule 1.12). Decide which category it fits and label it TN
-     or TV. If it fits no category, rewrite without it.
-   - The approved count covers existence only: for any word whose part of
-     speech or meaning you are not sure of, read its entry — the dictionary
-     approves many words in one function only (DISPLAY noun yes, verb no;
-     LEVEL adjective yes, noun no).
-4. Run the mechanical checks on the draft:
+- Single word: `webhook~tn` or with its category `webhook~tn19`
+- Technical verb: `reboot~tv2`
+- Multi-word: `[[tn6: pressure relief valve]]`
 
-   ```bash
-   grep -n ';' draft.txt                      # rule 8.1: no semicolons
-   grep -oE '[^.!?]+[.!?]' draft.txt | awk '{print NF"w:", $0}' | sort -rn | head
-   ```
+The annotation moves the TN/TV judgment to the moment it is free and feeds
+the compliance-note inventory. The checker validates syntax, category code,
+and dictionary relationship; the semantic category membership is your
+judgment. Categories can be omitted while drafting (`~tn`) — the checker
+prints the numbered category list when any are missing, and the Verified
+label is forbidden while any declared word lacks a category.
 
-   The second command lists sentences by word count — check anything over the
-   limit against the counting rules (8.5–8.7: parentheses, numbers, identifiers
-   and hyphenated words count as one word). Then scan by eye for: verb tenses
-   outside the rule 3.2 list, "-ing" forms outside technical nouns, noun
-   clusters over three words, paragraphs over six sentences, pronouns with
-   ambiguous referents.
-5. Fix every violation and re-verify the sentences you changed.
-6. Deliver in this order:
-   - The STE English text.
-   - The translation, if the user asked in another language or requested one:
-     sentence by sentence from the verified English, same source term → same
-     target term everywhere, conditions stay before commands, warnings keep the
-     risk word → command → consequence shape. State that the translation
-     inherits the STE structure but that formal STE compliance exists only for
-     the English text.
-   - The compliance note.
+## Step 4 — Run the checker (one call per pass)
+
+```bash
+scripts/ste-check.sh --annotated --verified draft.md   # or --marked / --clean
+scripts/ste-check.sh --entry <word>                    # full dictionary entry lookup
+```
+
+Exit codes: 0 automated checks clean, 1 findings remain, 2 invocation/cache
+failure. One run classifies every word (NOT APPROVED with extracted
+alternatives per part of speech, NO ENTRY, DECLARED TN/TV inventory,
+CATEGORY REQUIRED, REVIEW, CONTRACTIONS, IDENTIFIER REVIEW) and runs the
+mechanical checks (semicolons, sentence and paragraph limits with line
+numbers, "-ing" warnings, parenthetical sentences). `--marked` also emits
+`<draft>.marked.md` with every unresolved word tagged. `--verified` prints
+the manual rule checklist.
+
+## Step 5 — Resolve (Verified only; max 3 total checker passes)
+
+- NOT APPROVED → replace with the extracted alternative. The extraction is
+  mechanical: when it does not fit your meaning or part of speech, read the
+  entry first with `--entry <word>`. A lowercase word CAN stay if the context
+  makes it a technical noun or technical verb (rules 1.6 / 1.12) — annotate
+  it and justify it in the note; replacement is the default, TN/TV the
+  documented exception.
+- NO ENTRY → annotate as TN/TV with a category, or rewrite without the word.
+- REVIEW / CATEGORY REQUIRED / CONTRACTIONS / IDENTIFIER REVIEW / mechanical
+  findings → resolve each one.
+- Rerun the checker after fixing. "Automated checks clean" is not the end:
+  complete the printed MANUAL CHECKLIST before applying the Verified label.
+- If findings remain after the third checker pass, the deliverable is NOT
+  Verified: deliver the marked artifact with a "verification incomplete"
+  note.
+
+## Step 6 — Deliver
+
+1. The STE English text (verified, marked, or clean).
+2. The translation, if the user asked in another language or requested one:
+   sentence by sentence from the STE English, same source term → same target
+   term everywhere, conditions before commands, warnings keep the risk word →
+   command → consequence shape. Formal STE compliance exists only for the
+   English text — say so.
+3. The compliance note.
 
 ## Compliance note (required)
 
-Every STE deliverable ends with a short note containing exactly these three
-items:
+Verified deliverables end with exactly these three items:
 
-- **TN/TV**: the words used as technical nouns or technical verbs, each with
-  its category (e.g., "residual current device — TN, category 2 devices").
-- **Replaced**: unapproved words from the source (or from your first draft) and
-  the approved word that replaced each one (e.g., "qualified → APPROVED").
-- **Unverified**: words you could not check because the dictionary was
-  unavailable — or "none".
+- **TN/TV**: every declared technical noun/verb with its category number and
+  name — taken from the checker's DECLARED inventory plus any justified
+  REVIEW words (e.g., "residual current device — TN, category 6, systems and
+  components").
+- **Replaced**: unapproved words from the source or draft and what replaced
+  each one (e.g., "qualified → APPROVED").
+- **Unverified**: words that could not be checked — or "none".
 
-An empty claim like "all vocabulary is approved" is not a compliance note. If
-you did not grep a word, it goes under Unverified.
+Marked and Clean deliverables end with one line instead: the level and the
+checker's flagged count (e.g., "Draft level: marked — 7 words flagged by
+ste-check; not dictionary-verified STE"). A marked or clean draft must never
+present itself as STE-compliant, and "all vocabulary is approved" without a
+checker run behind it is never written.
+
+## Economy mode (optional)
+
+If the harness supports delegating to a subagent with a cheaper model tier —
+or an `ste-writer` agent type is available — you MAY delegate Steps 3–5 to
+it and only relay its deliverable and compliance note. The checker keeps the
+quality floor deterministic, so a cheaper drafting model is safe: its
+vocabulary errors are caught mechanically, and its judgment calls surface in
+the compliance note. Never delegate the level choice (Step 1).
 
 ## Common mistakes
 
 - Asserting compliance from memory. "qualified" is not approved (use
-  APPROVED); "display" is approved only as a noun; "domestic" is not in the
-  dictionary at all. Grep first, claim after.
-- Keeping a 4+ word noun cluster ("pressure relief valve assembly"). Rule 2.2:
-  write it in full once, then hyphenate the unit ("pressure-relief valve") or
-  give a shorter form.
-- "This prevents..." with a bare pronoun. GR-4: give "this" a noun or repeat
-  the referent ("These precautions prevent...").
-- Using Issue 8 terminology: "technical name" no longer exists — Issue 9 says
-  technical noun / technical verb.
-- Calling a compositional verb + adverb a phrasal verb. The dictionary itself
-  approves "GO BACK" for "return" — rule 9.3 bans only combinations whose
-  meaning differs from their parts ("put out" → "extinguish").
+  APPROVED); "display" is approved as a noun but not as a verb; "should" is
+  not approved (MUST, or IF for conditions). Run the checker first, claim
+  after.
+- Trusting an extracted alternative blindly when it does not fit the
+  sentence — the columns are parsed mechanically; `--entry` shows the full
+  entry with meanings and examples.
+- Treating a Marked or Clean draft as STE. Only Verified — automated checks
+  clean AND manual checklist completed — may claim compliance.
+- Keeping a 4+ word noun cluster. Rule 2.2: write it in full once, then
+  hyphenate the unit ("pressure-relief valve") or give a shorter form.
+- Using Issue 8 terminology: "technical name" no longer exists — Issue 9
+  says technical noun / technical verb.
 - Drafting directly in Spanish (or any non-English language). The dictionary
   only exists for English — draft in STE English, verify, then translate.

@@ -10,14 +10,14 @@ cached spec text (see SKILL.md for the cache path).
 - 1.2: Use approved words only as their specified part of speech (dictionary approves "DISPLAY (n)" but not "display (v)").
 - 1.3: Use approved words only with their approved meaning ("close" = verb only; use "near" for proximity).
 - 1.4: Use only the approved forms of verbs and adjectives given in the dictionary.
-- 1.5: A word not in the dictionary is usable if it fits a technical noun category (parts, tools, materials, fluids, circuits, instruments, colors, numbers/units, documentation, damage terms, medical terms, law, life forms, etc.). Label it TN.
+- 1.5: A word not in the dictionary is usable if it fits one of the 22 numbered technical noun categories (full list at the end of this file). Label it TN with its category number.
 - 1.6: Use an unapproved word only when it is a technical noun or part of one.
 - 1.7: Do not use technical nouns as verbs ("do not oil the valve" → "apply oil to the valve").
 - 1.8: Use the technical nouns of your company, industry, or subject field.
 - 1.9: When you can choose a technical noun, pick the short, easy one.
 - 1.10: No regional, slang, or jargon words as technical nouns.
 - 1.11: One item = one technical noun, always the same one. Never vary terminology for style.
-- 1.12: A verb not in the dictionary is usable if it fits a technical verb category (manufacturing processes, computing, domain operations). Label it TV.
+- 1.12: A verb not in the dictionary is usable if it fits one of the 4 numbered technical verb categories (full list at the end of this file). Label it TV with its category number.
 - 1.13: Do not use technical verbs as nouns.
 - 1.14: American English spelling (Merriam-Webster), unless an official directive says otherwise.
 
@@ -99,3 +99,35 @@ Issue 9 terminology: "technical noun" and "technical verb" (Issue 8 said "techni
 - GR-6: No Latin abbreviations (e.g., i.e., etc.) — write "for example", "that is", "or other ...".
 - GR-7: Gender-neutral language always. "He"/"she" are not in the dictionary and not permitted.
 - GR-8: The possessive ('s) is permitted but use it only when you are sure it is correct; otherwise restructure with "of".
+
+## Technical noun categories (rule 1.5, Issue 9)
+
+- 1: Official parts information
+- 2: Vehicles or machines, and locations on them
+- 3: Tools and support equipment, their parts, and locations on them
+- 4: Materials, consumables, and unwanted material
+- 5: Facilities, infrastructure, and logistic procedures
+- 6: Systems, components and circuits, their functions, configurations, and parts
+- 7: Mathematical, scientific, engineering terms, and formulas
+- 8: Navigation and geographic terms
+- 9: Numbers, units of measurement and time (and their symbols)
+- 10: Quoted text
+- 11: Professional roles, individuals, groups, organizations, and geopolitical entities
+- 12: Parts of the body
+- 13: Common personal effects, food, and beverages
+- 14: Medical terms
+- 15: Official documents, parts of documentation, standards, and guidelines
+- 16: Environmental and operational conditions
+- 17: Colors
+- 18: Damage terms
+- 19: Computer science, information and communication technology
+- 20: Civil and military operations
+- 21: Law and regulations
+- 22: Animals, plants, and other life forms
+
+## Technical verb categories (rule 1.12, Issue 9)
+
+- 1: Manufacturing processes
+- 2: Computer processes and applications
+- 3: Instructions and information for applicable subject fields
+- 4: Law and regulations
