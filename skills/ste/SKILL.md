@@ -150,12 +150,18 @@ Verified deliverables end with exactly these three items:
   each one (e.g., "qualified → APPROVED").
 - **Unverified**: words that could not be checked — or "none".
 
-Marked and Clean deliverables end with one line instead: the level and the
-checker's flagged count (e.g., "Draft level: marked — 7 words flagged by
-ste-check; not dictionary-verified STE"). Raw deliverables end with: "Draft
-level: raw — model training only; nothing was checked." A marked, clean, or
-raw draft must never present itself as STE-compliant, and "all vocabulary is
-approved" without a checker run behind it is never written.
+The other levels end with one line instead:
+
+- Marked: the level and the checker's flagged count (e.g., "Draft level:
+  marked — 7 words flagged by ste-check; not dictionary-verified STE").
+- Clean: "Draft level: clean — annotations validated and stripped; the
+  dictionary was not read." (`--clean` classifies nothing, so there is no
+  flagged count to report.)
+- Raw: "Draft level: raw — model training only; nothing was checked."
+
+A marked, clean, or raw draft must never present itself as STE-compliant,
+and "all vocabulary is approved" without a checker run behind it is never
+written.
 
 ## Economy mode (optional)
 
