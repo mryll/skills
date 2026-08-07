@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Markdown-only skills collection — no code, build, tests, or linters.
+Markdown-first skills collection — no build, tests, or linters. Skills may ship small helper scripts under `skills/<name>/scripts/`.
 
 ## Skill File Format
 

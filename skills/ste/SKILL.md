@@ -1,6 +1,6 @@
 ---
 name: ste
-version: 1.0.0
+version: 1.1.0
 description: "Use when the user asks to write, rewrite, translate, or check text in Simplified Technical English — any mention of STE, STE100, ASD-STE100, Simplified Technical English, 'inglés técnico simplificado', 'inglés controlado', 'controlled English', 'lenguaje controlado', 'en STE', 'reescribí esto en STE', 'redactá este procedimiento / warning / manual en STE', or a request to check procedures, warnings, manuals, or technical descriptions for STE compliance. Do NOT use for generic simplification or ELI5-style requests that do not mention STE or a controlled language."
 ---
 
@@ -50,21 +50,24 @@ unverified in the compliance note (see below).
    (procedural: ≤20 words/sentence, imperative; descriptive: ≤25 words, no
    imperative; safety instruction: WARNING/CAUTION → command or condition →
    consequence).
-3. Verify the vocabulary. For every noun, verb, adjective, and adverb in the
-   draft, look it up:
+3. Verify the vocabulary. Write the draft to a file and run the checker script
+   (in this skill directory) — one deterministic pass over every word:
 
    ```bash
-   grep -A6 -iE "^(word1|word2|word3) \(" "$C/ste100.txt"
+   scripts/ste-check.sh draft.txt
    ```
 
-   Read each hit by its case:
-   - `WORD (pos)` in UPPERCASE → approved, but only as that part of speech and
-     only with its approved meaning.
-   - `word (pos)` in lowercase → NOT approved. The UPPERCASE words shown after
-     it are the approved alternatives — use one of them.
-   - No entry → not in the dictionary. Usable only as a technical noun (rule
-     1.5 categories) or technical verb (rule 1.12). Decide which category it
-     fits and label it TN or TV. If it fits no category, rewrite without it.
+   Work through its output:
+   - NOT APPROVED (lowercase dictionary entry) → look up the approved
+     alternatives with `grep -A6 -iE "^word \(" "$C/ste100.txt"` and use one,
+     or justify the word as part of a technical noun.
+   - NO ENTRY → usable only as a technical noun (rule 1.5 categories) or
+     technical verb (rule 1.12). Decide which category it fits and label it TN
+     or TV. If it fits no category, rewrite without it.
+   - The approved count covers existence only: for any word whose part of
+     speech or meaning you are not sure of, read its entry — the dictionary
+     approves many words in one function only (DISPLAY noun yes, verb no;
+     LEVEL adjective yes, noun no).
 4. Run the mechanical checks on the draft:
 
    ```bash

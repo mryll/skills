@@ -19,7 +19,7 @@ Skills are markdown-only instructions that shape how your coding agent writes, r
 | **[dual-testing](skills/dual-testing)** | Go dual testing strategy: integration tests (testcontainers) verify full-chain wiring for happy paths, unit tests (testify/mock) verify error handling logic. Avoids duplicating happy paths across layers. |
 | **[explain-pr](skills/explain-pr)** | Explain a freshly opened Pull Request or Merge Request back to you in plain language — what changed, why, and how — with the relevant code snippets inline. Fixed, predictable structure; reads the local git diff, so no `gh`/`glab` required. |
 | **[como-si-fuera-de-boca](skills/como-si-fuera-de-boca)** | Explain anything — code, errors, concepts, or non-technical topics — in the simplest plain-language way (ELI5), with a natural Río de la Plata (Argentine) voice that puts clarity before humor. On-request only: triggers on "explicámelo como si fuera de Boca", "bajámelo un cambio", "en criollo", "ELI5", "explain like I'm 5", etc. |
-| **[ste](skills/ste)** | Write, rewrite, or check text in ASD-STE100 Simplified Technical English. Every word is verified by grep against the official Issue 9 dictionary (auto-downloaded and cached), never from memory. Drafts in controlled English first, then translates to your language preserving the STE structure. |
+| **[ste](skills/ste)** | Write, rewrite, or check text in ASD-STE100 Simplified Technical English. Every word is verified against the official Issue 9 dictionary (auto-downloaded and cached) via a deterministic checker script — never from memory. Drafts in controlled English first, then translates to your language preserving the STE structure. |
 
 ## Installation
 
