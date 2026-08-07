@@ -1,6 +1,6 @@
 ---
 name: ste
-version: 1.3.1
+version: 1.3.2
 description: "Use when the user asks to write, rewrite, explain, translate, or check ANY content in Simplified Technical English — mid-conversation re-explanations included — on any mention of STE, STE100, ASD-STE100, Simplified Technical English, 'inglés técnico simplificado', 'inglés controlado', 'controlled English', 'lenguaje controlado', 'en STE', 'explicame esto en STE', 'volvé a explicarlo en STE', 'explain this in STE', 'reescribí esto en STE', 'redactá este procedimiento / warning / manual en STE', or a request to check procedures, warnings, manuals, or technical descriptions for STE compliance. Do NOT use for generic simplification or ELI5-style requests that do not mention STE or a controlled language."
 ---
 
@@ -45,10 +45,13 @@ The levels:
   replacements, TN/TV judgment, fix passes, and the manual checklist.
 - **Marked draft** — STE-style draft with every unresolved word tagged so the
   reader sees what a verified pass would resolve. Not verified.
-- **Clean draft** — STE-style draft, no marks. Annotations still validated
-  and stripped by the checker's `--clean` mode. Not verified.
+- **Clean draft** — STE-style draft, no marks. The TN/TV annotation work
+  primes richer domain detail (measured: ~15% more content than Raw, at the
+  price of slightly weaker general vocabulary and ~40% more tokens).
+  Annotations are validated and stripped by `--clean`. Not verified.
 - **Raw draft** — STE style from model training only. No annotations, no
-  dictionary, no checker, no marks, zero tool calls. The cheapest level.
+  dictionary, no checker, no marks, zero tool calls. The cheapest and
+  fastest level; also the shortest, least detailed output.
 
 Clean skips Step 2 (the `--clean` mode reads no dictionary). Raw skips
 Steps 2 through 5 entirely — write and deliver. If the dictionary cannot be
