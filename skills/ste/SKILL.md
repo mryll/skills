@@ -1,7 +1,8 @@
 ---
 name: ste
-version: 1.3.2
-description: "Use when the user asks to write, rewrite, explain, translate, or check ANY content in Simplified Technical English — mid-conversation re-explanations included — on any mention of STE, STE100, ASD-STE100, Simplified Technical English, 'inglés técnico simplificado', 'inglés controlado', 'controlled English', 'lenguaje controlado', 'en STE', 'explicame esto en STE', 'volvé a explicarlo en STE', 'explain this in STE', 'reescribí esto en STE', 'redactá este procedimiento / warning / manual en STE', or a request to check procedures, warnings, manuals, or technical descriptions for STE compliance. Do NOT use for generic simplification or ELI5-style requests that do not mention STE or a controlled language."
+version: 1.4.0
+description: "Write, rewrite, translate, or check content in Simplified Technical English (ASD-STE100), with four compliance levels (verified / marked / clean / raw) backed by the official dictionary and a checker script. Explicit invocation only: run this skill ONLY when the user types /ste. NEVER auto-invoke it on mentions of STE, STE100, ASD-STE100, Simplified Technical English, controlled language, or requests to write or check technical content."
+disable-model-invocation: true
 ---
 
 # STE — Simplified Technical English (ASD-STE100)
