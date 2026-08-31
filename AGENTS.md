@@ -7,6 +7,7 @@ Markdown-first skills collection — no build, tests, or linters. Skills may shi
 - Each skill lives at `skills/<name>/SKILL.md` with YAML frontmatter (`name`, `description`, `version`).
 - `description` MUST be a single-line string — never a YAML block scalar (`|` or `>`); block scalars break skill registration.
 - Keep `description` ≤1024 chars, or Codex CLI silently skips the skill.
+- Quote `description` in single quotes if it contains a colon followed by a space (`archivo: "x"`): unquoted, YAML reads it as a nested mapping and the skill fails to parse.
 - Optional `references/` subdirectory for supporting docs, linked from SKILL.md.
 
 ## Non-Obvious Rules
