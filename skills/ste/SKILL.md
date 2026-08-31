@@ -1,7 +1,7 @@
 ---
 name: ste
 version: 1.4.0
-description: "Write, rewrite, translate, or check content in Simplified Technical English (ASD-STE100), with four compliance levels (verified / marked / clean / raw) backed by the official dictionary and a checker script. Explicit invocation only: run this skill ONLY when the user types /ste. NEVER auto-invoke it on mentions of STE, STE100, ASD-STE100, Simplified Technical English, controlled language, or requests to write or check technical content."
+description: "Write, rewrite, translate, or check content in Simplified Technical English (ASD-STE100), with four compliance levels (verified / marked / clean / raw) backed by the official dictionary and a checker script. Explicit invocation only: run this skill ONLY when the user types /ste or explicitly asks for the ste skill by name. NEVER auto-invoke it on mentions of STE, STE100, ASD-STE100, Simplified Technical English, or controlled language, and NEVER on a request to answer or write in ASD-STE100 - that is a request about tone, not a request to run this skill."
 disable-model-invocation: true
 ---
 
