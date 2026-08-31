@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "Curated agent skills for Claude Code",
-    "version": "1.12.0"
+    "version": "1.13.0"
   },
   "plugins": [
     {
       "name": "mryll-skills",
       "source": "./",
       "description": "Mryll's collection of research-backed Claude Code skills",
-      "version": "1.12.0",
+      "version": "1.13.0",
       "strict": false,
       "skills": [
         "./skills/agentmd",
@@ -27,7 +27,10 @@
         "./skills/pr-quiz",
         "./skills/study-session",
         "./skills/ste",
-        "./skills/c4-model"
+        "./skills/c4-model",
+        "./skills/claude-review",
+        "./skills/claude-discuss",
+        "./skills/agent-context-auditor"
       ]
     }
   ]
