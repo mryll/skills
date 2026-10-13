@@ -1,6 +1,6 @@
 ---
 name: codex-review
-version: 1.3.0
+version: 1.3.1
 description: "Iterative code review and planning discussion between the local agent and Codex CLI. Orchestrates an automatic back-and-forth debate where both agents discuss findings, architecture decisions, or implementation plans until reaching consensus. Codex CLI runs READ-ONLY and never modifies files; model and reasoning effort come from the user's local Codex config. Supports plan mode: when the local agent has a plan ready, Codex evaluates and iterates on it before implementation, producing an updated consensus plan. Use when the user asks to review with codex, analyze with codex, discuss code with codex, iterate with codex, consult codex, ask codex, review the plan with codex, validate plan with codex, or any Codex CLI request for code review, architecture review, plan review, or implementation strategy. Does NOT trigger on non-code topics like diet, fitness, writing, life decisions, or general strategy; use codex-discuss for those."
 ---
 
@@ -112,8 +112,8 @@ Codex CLI auto-persists sessions to `~/.codex/sessions/`. Use this to maintain a
 
 **How it works:**
 
-1. **Round 1**: Run `codex exec --json -o <FILE>` with all required flags, **redirecting stdout to an events file and stderr to a separate file** (see *Reading Codex's Reply* — never let the raw stream reach the tool result). The session ID is in the `thread.started` event: parse it from the **events file after Codex exits** (Codex emits `thread_id` there) and reuse it for all subsequent rounds. Read Codex's reply from `<FILE>`.
-2. **Round 2+**: Run `codex exec resume --skip-git-repo-check -o <FILE> <SESSION_ID> "prompt"`, again redirecting stdout and stderr to files. This continues the existing conversation with full prior context. Model, sandbox, and reasoning effort are session settings and ARE inherited — do NOT re-pass `-m`/`-c`/`-s`. But `-o` is a per-invocation output flag, NOT a session setting: it is never inherited, so `-o <FILE>` must be re-passed every round to get the reply out cleanly. (`--json` is not needed in round 2+ — the session ID is already known.)
+1. **Round 1**: Run `codex exec --json -o <FILE> -s read-only --skip-git-repo-check "prompt" < /dev/null`, **with stdin redirected from `/dev/null` (never omit it: an open non-TTY stdin makes `codex exec` block on "Reading additional input from stdin..." before it starts — see *Stall detection*) and stdout to an events file and stderr to a separate file** (see *Reading Codex's Reply* — never let the raw stream reach the tool result). The session ID is in the `thread.started` event: parse it from the **events file after Codex exits** (Codex emits `thread_id` there) and reuse it for all subsequent rounds. Read Codex's reply from `<FILE>`.
+2. **Round 2+**: Run `codex exec resume --skip-git-repo-check -o <FILE> <SESSION_ID> "prompt" < /dev/null`, again redirecting stdin from `/dev/null` and stdout and stderr to files. This continues the existing conversation with full prior context. Model, sandbox, and reasoning effort are session settings and ARE inherited — do NOT re-pass `-m`/`-c`/`-s`. But `-o` is a per-invocation output flag, NOT a session setting: it is never inherited, so `-o <FILE>` must be re-passed every round to get the reply out cleanly. (`--json` is not needed in round 2+ — the session ID is already known.)
 
 **Why this matters**: Without `resume`, each `codex exec` starts a blank session — Codex loses its own previous analysis, can contradict itself, and follow-up prompts must re-summarize everything. With `resume`, the conversation flows naturally and follow-up prompts are minimal.
 
@@ -274,7 +274,7 @@ Compare Codex's findings against your internal pre-analysis:
 
 **For each subsequent round:**
 
-1. **Send follow-up to Codex** via `codex exec resume --skip-git-repo-check -o <FILE> <SESSION_ID> "prompt"` (use heredoc for multi-line prompts; reuse the round-1 reply file and read Codex's response from it — see Command Execution). Codex has full context from all prior rounds — no need to re-summarize the discussion.
+1. **Send follow-up to Codex** via `codex exec resume --skip-git-repo-check -o <FILE> <SESSION_ID> "prompt" < /dev/null` (use heredoc for multi-line prompts; reuse the round-1 reply file and read Codex's response from it — see Command Execution). Codex has full context from all prior rounds — no need to re-summarize the discussion.
 2. **Analyze Codex's response**: Identify findings, agreements, disagreements, or questions
 3. **Formulate the local agent's response**:
    - If Codex asks for more context: provide it (read the files/paths Codex requests, summarize relevant info, or point to additional paths)
@@ -486,6 +486,18 @@ High reasoning efforts routinely run longer than foreground shell limits allow �
 - While a round is running, never fabricate or anticipate Codex's reply; if the user asks, say the round is still in progress.
 
 **Fallback (no background support)**: run foreground with the maximum timeout the harness allows (in Claude Code's Bash tool: `timeout: 600000`). If the call is killed by the timeout, re-launch it in background rather than shrinking the review scope to fit the limit — the session is resumable, but a killed round 1 has no session ID, so it must be restarted.
+
+### Stall detection — a blocked stdin looks like thinking
+
+A `codex exec` that was launched **without** `< /dev/null` from a non-interactive shell never starts the model: it prints `Reading additional input from stdin...` to stdout and waits for stdin to close, which in an agent harness never happens. From the outside it looks exactly like a long reasoning round — the process is alive, there is no error — but it sits at 0 % CPU with no child processes and never writes a session under `~/.codex/sessions/`. One such run was left for 2.5 hours before anyone looked.
+
+Check for it instead of waiting it out:
+
+- About a minute after launch, `grep -c 'Reading additional input from stdin' "$dir/events.jsonl" "$dir/stderr.log"` (round 1) or `"$dir/stdout.log"` (round 2+). Any hit means the call is blocked: kill it (`pkill -f 'codex exec'` scoped to this run's PID if the harness gives one) and relaunch with the `< /dev/null` redirection — the command never reached Codex, so nothing is lost.
+- A round-1 events file with no `thread.started` line after a couple of minutes is the same symptom; a real round emits it within seconds.
+- A process that shows CPU activity, or child processes (`git`, `rg`, …), is working — leave it alone.
+
+This also covers the "called by hand" case: if the skill is not loaded and the agent assembles the command itself, the same redirection rule applies, and so does this check.
 
 ### Required Flags Checklist (Round 1)
 
