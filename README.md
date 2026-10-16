@@ -68,4 +68,4 @@ Once installed, skills activate automatically based on context. Some examples:
 - **study-session** — Ask for a "study session" / "sesión de estudio" on a repo or subsystem you want to truly understand.
 - **como-si-fuera-de-boca** — Ask to "explicámelo como si fuera de Boca", "bajámelo un cambio", "explicalo simple", "en criollo", "ELI5", or "explain like I'm 5" when you want something dumbed down on request.
 - **ste** — Ask to "reescribí esto en STE", "explicame esto en STE", "rewrite this in Simplified Technical English", "redactá este warning en STE", or "check this against ASD-STE100" — works mid-conversation on anything just discussed. Choose Verified (dictionary-checked), Marked, Clean, or Raw; translation on request.
-- **practitioner-voice-review** — Ask "does this sound like me or like ChatGPT?", "is my judgment coming through in this ADR?", "revisá la voz de este post", or "practitioner voice review of docs/adr-0007.md".
+- **practitioner-voice-review** — Explicit invocation only: run `/practitioner-voice-review docs/adr-0007.md` (or name the skill) when you want the review. It never fires on its own, so "improve this paragraph" stays a normal edit.

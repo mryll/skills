@@ -1,7 +1,8 @@
 ---
 name: practitioner-voice-review
-version: 0.1.0
-description: "Review an already-written text — ADR, RFC, design doc, proposal, engineering blog post, essay, LinkedIn post, internal memo — against Jim Highsmith's Practitioner Voice: is the author's earned judgment visible, does the claim come first, do real tensions stay live, does authority rest on consequence instead of frameworks, does the prose trust the reader. Returns an evidence-based diagnosis with exact quotes and questions for the author; never rewrites the text, scores it, or edits files. Use it whenever the user asks for feedback on the voice, judgment, argument or point of view of their own writing, even without naming Practitioner Voice: 'does this sound like me or like ChatGPT?', 'is my judgment coming through in this ADR?', 'revisá la voz de este post', 'esto suena a plantilla?', 'practitioner voice'. Do not use it to draft, rewrite, translate, summarize, proofread or fact-check a text."
+version: 0.2.0
+description: "Review an already-written text — ADR, RFC, design doc, proposal, engineering blog post, essay, LinkedIn post, internal memo — against Jim Highsmith's Practitioner Voice: is the author's earned judgment visible, does the claim come first, do real tensions stay live, does authority rest on consequence instead of frameworks, does the prose trust the reader. Returns an evidence-based diagnosis with exact quotes and questions for the author; never rewrites the text, scores it, or edits files. Explicit invocation only: run this skill ONLY when the user types /practitioner-voice-review or explicitly asks for the practitioner-voice-review skill by name. NEVER auto-invoke it on requests to review, critique, improve or rewrite writing, or on questions like 'does this sound like ChatGPT?' — those are not requests to run this skill."
+disable-model-invocation: true
 ---
 
 # Practitioner Voice review
